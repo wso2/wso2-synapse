@@ -21,6 +21,7 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.managem
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.LinkedHashMap;
@@ -123,5 +124,16 @@ public class TracingScopeManager {
             tracingScopes.remove(tracingScopeId);
         }
         ThreadContext.remove(SynapseConstants.TRACE_ID);
+    }
+
+    /**
+     * Gets the span store of the tracing scope the given message context belongs to.
+     * The scope is created on demand when the flow does not have one yet.
+     *
+     * @param synCtx Message context.
+     * @return Span store of the message flow's tracing scope.
+     */
+    public SpanStore getSpanStore(MessageContext synCtx) {
+        return getTracingScope(synCtx).getSpanStore();
     }
 }

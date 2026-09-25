@@ -20,6 +20,8 @@ package org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.managem
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.OpenTelemetryManager;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.ParentSpanWrapperStackManager;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.stores.SpanStore;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.models.SpanWrapper;
@@ -33,6 +35,7 @@ public class LatestActiveParentResolver extends AbstractParentResolver {
     /**
      * Resolves the latest active span as the parent.
      * @param spanStore The span store object.
+     * @param synCtx    The message context.
      * @return          Resolved parent span wrapper.
      */
     public static SpanWrapper resolveParent(SpanStore spanStore, MessageContext synCtx) {
@@ -44,6 +47,24 @@ public class LatestActiveParentResolver extends AbstractParentResolver {
             }
         }
         return resolveLatestActiveSpanWrapper(spanStore);
+    }
+
+    /**
+     * Resolves the latest active span of the given message flow as the parent, looking the span
+     * store up from the globally held OpenTelemetry manager. For callers outside the tracing
+     * package - such as transports propagating context - that do not hold a span store themselves.
+     *
+     * @param synCtx    The message context.
+     * @return          Resolved parent span wrapper, or null when tracing is not initialized.
+     */
+    public static SpanWrapper resolveParent(MessageContext synCtx) {
+        OpenTelemetryManager manager = OpenTelemetryManagerHolder.getOpenTelemetryManager();
+        if (manager == null || manager.getHandler() == null) {
+            return null;
+        }
+
+        SpanStore spanStore = manager.getHandler().getSpanStore(synCtx);
+        return resolveParent(spanStore, synCtx);
     }
 
     /**

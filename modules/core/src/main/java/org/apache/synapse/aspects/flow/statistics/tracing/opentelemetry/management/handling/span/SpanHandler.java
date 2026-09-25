@@ -25,6 +25,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +40,14 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryTracer;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.helpers.TracingUtils;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.parentresolving.LatestActiveParentResolver;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.parentresolving.ParentResolver;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScope;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScopeManager;
@@ -61,6 +64,31 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 public class SpanHandler implements OpenTelemetrySpanHandler {
 
     private Log logger = LogFactory.getLog(SpanHandler.class);
+
+    /**
+     * Writes trace context entries into a plain map carrier.
+     */
+    private static final TextMapSetter<Map<String, String>> MAP_SETTER = (carrier, key, value) -> {
+        if (carrier != null) {
+            carrier.put(key, value);
+        }
+    };
+
+    /**
+     * Reads trace context entries from a plain map carrier.
+     */
+    private static final TextMapGetter<Map<String, String>> MAP_GETTER = new TextMapGetter<Map<String, String>>() {
+        @Override
+        public String get(Map<String, String> carrier, String key) {
+            return carrier != null ? carrier.get(key) : null;
+        }
+
+        @Override
+        public Iterable<String> keys(Map<String, String> carrier) {
+            return carrier != null ? carrier.keySet() : Collections.emptySet();
+        }
+    };
+
     /**
      * The tracer object, that is used to hold all the Jaeger spans.
      */
@@ -85,21 +113,26 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
      * @param span                  Span which the span information will be injected to the tracerSpecificCarrier.
      * @param tracerSpecificCarrier Hashmap to inject the tracer and span context.
      */
-    public static void inject(io.opentelemetry.api.trace.Span span, Map<String, String> tracerSpecificCarrier) {
+    public static void inject(Span span, Map<String, String> tracerSpecificCarrier) {
+        inject(span, tracerSpecificCarrier, MAP_SETTER);
+    }
 
-        TextMapSetter<Map<String, String>> setter = new TextMapSetter<Map<String, String>>() {
-            @Override
-            public void set(Map<String, String> tracerSpecificCarrier, String key, String value) {
-
-                if (tracerSpecificCarrier != null) {
-                    tracerSpecificCarrier.put(key, value);
-                }
-
-            }
-        };
-        try (Scope ignored = (span).makeCurrent()) {
-            openTelemetry.getPropagators().getTextMapPropagator().inject(Context.current(), tracerSpecificCarrier
-                    , setter);
+    /**
+     * Injects the context of the given span into an arbitrary carrier, using the carrier's own setter.
+     * Lets transports that do not carry HTTP style headers - such as the Solace JCSMP client - propagate
+     * trace context in their native message representation.
+     *
+     * @param span    Span whose context is injected into the carrier.
+     * @param carrier Carrier the trace context is written to.
+     * @param setter  Setter that knows how to write a key value pair into the carrier.
+     * @param <T>     Type of the carrier.
+     */
+    public static <T> void inject(Span span, T carrier, TextMapSetter<T> setter) {
+        if (openTelemetry == null) {
+            return;
+        }
+        try (Scope ignored = span.makeCurrent()) {
+            openTelemetry.getPropagators().getTextMapPropagator().inject(Context.current(), carrier, setter);
         }
     }
 
@@ -110,24 +143,29 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
      * @return extracted context.
      */
     public static Context extract(Map<String, String> tracerSpecificCarrier) {
+        return extract(tracerSpecificCarrier, MAP_GETTER);
+    }
 
-        TextMapGetter<Map<String, String>> getter =
-                new TextMapGetter<Map<String, String>>() {
-                    public String get(Map<String, String> tracerSpecificCarrier, String key) {
-                        if (tracerSpecificCarrier != null) {
-                            return tracerSpecificCarrier.get(key);
-                        }
-                        return null;
-                    }
+    /**
+     * Extracts trace context from an arbitrary carrier, using the carrier's own getter.
+     * Counterpart of {@link #inject(Span, Object, TextMapSetter)} for transports with a native
+     * message representation.
+     *
+     * @param carrier Carrier to extract the tracer and span context from.
+     * @param getter  Getter that knows how to read a key from the carrier.
+     * @param <T>     Type of the carrier.
+     * @return Extracted context, or the current context when tracing is not initialized.
+     */
+    public static <T> Context extract(T carrier, TextMapGetter<T> getter) {
+        if (openTelemetry == null) {
+            return Context.current();
+        }
+        return openTelemetry.getPropagators().getTextMapPropagator().extract(Context.current(), carrier, getter);
+    }
 
-                    public Iterable<String> keys(Map<String, String> tracerSpecificCarrier) {
-
-                        return tracerSpecificCarrier.keySet();
-                    }
-                };
-
-        return openTelemetry.getPropagators().getTextMapPropagator()
-                .extract(Context.current(), tracerSpecificCarrier, getter);
+    @Override
+    public SpanStore getSpanStore(MessageContext messageContext) {
+        return tracingScopeManager.getSpanStore(messageContext);
     }
 
     @Override
@@ -781,5 +819,68 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
             }
             stackedSequences.clear();
         }
+    }
+
+    /**
+     * Extracts the trace context carried by an inbound transport message and writes it into the
+     * transport headers of the Synapse message context that was created for it.
+     * <p>
+     * The entry span of a message flow is parented off the trace context found in
+     * {@code TRANSPORT_HEADERS} (see {@link #startSpan}). Transports that carry trace context in
+     * their own message representation rather than in HTTP style headers - such as Solace JCSMP -
+     * therefore have to restate it there; otherwise the flow starts a brand new trace instead of
+     * continuing the producer's one.
+     * <p>
+     * No-op when tracing is disabled, or when the message context is not backed by Axis2.
+     *
+     * @param message       Transport message to read the trace context from.
+     * @param synCtx        Synapse message context created for that message.
+     * @param textMapGetter Getter that knows how to read a key from the transport message.
+     * @param <T>           Type of the transport message.
+     */
+    public static <T> void extractTraceContextAndInjectToMessageContext(T message, MessageContext synCtx,
+                                                                        TextMapGetter<T> textMapGetter) {
+        if (!RuntimeStatisticCollector.isOpenTelemetryEnabled() || openTelemetry == null
+                || !(synCtx instanceof Axis2MessageContext)) {
+            return;
+        }
+        Context extractedContext = extract(message, textMapGetter);
+        Map<String, String> carrier = new HashMap<>();
+        openTelemetry.getPropagators().getTextMapPropagator().inject(extractedContext, carrier, MAP_SETTER);
+        if (carrier.isEmpty()) {
+            // The message carried no trace context - leave the headers untouched so the flow
+            // starts its own trace rather than inheriting a stale parent.
+            return;
+        }
+        org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        Map headersMap = (Map) axis2MsgCtx
+                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (headersMap == null) {
+            headersMap = new TreeMap<String, String>(String::compareToIgnoreCase);
+        }
+        headersMap.putAll(carrier);
+        axis2MsgCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
+    }
+
+    /**
+     * Injects the trace context of the latest active span of the given message flow into an
+     * outbound transport message, so that the remote consumer can continue the same trace.
+     * <p>
+     * No-op when tracing is disabled or when the flow has no active span.
+     *
+     * @param synCtx  Synapse message context of the flow performing the send.
+     * @param message Outbound transport message to write the trace context into.
+     * @param setter  Setter that knows how to write a key value pair into the transport message.
+     * @param <T>     Type of the transport message.
+     */
+    public static <T> void injectTraceContext(MessageContext synCtx, T message, TextMapSetter<T> setter) {
+        if (!RuntimeStatisticCollector.isOpenTelemetryEnabled() || synCtx == null) {
+            return;
+        }
+        SpanWrapper spanWrapper = LatestActiveParentResolver.resolveParent(synCtx);
+        if (spanWrapper == null || spanWrapper.getSpan() == null) {
+            return;
+        }
+        inject(spanWrapper.getSpan(), message, setter);
     }
 }
