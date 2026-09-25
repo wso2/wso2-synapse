@@ -33,6 +33,11 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -53,8 +58,12 @@ public class Access {
 
     private static AccessLogger accessLogger;
 
-    private static LinkedBlockingQueue<HttpRequestWrapper> requestQueue;
-    private static LinkedBlockingQueue<HttpResponseWrapper> responseQueue;
+    private static Queue<HttpRequestWrapper> requestQueue;
+    private static Queue<HttpResponseWrapper> responseQueue;
+
+    private static final int LOG_FREQUENCY_IN_SECONDS = 30;
+
+    private final boolean blockingQueueEnabled;
 
     private Date date;
 
@@ -68,8 +77,14 @@ public class Access {
         super();
         Access.log = log;
         Access.accessLogger = accessLogger;
-        requestQueue = new LinkedBlockingQueue<HttpRequestWrapper>();
-        responseQueue = new LinkedBlockingQueue<HttpResponseWrapper>();
+        blockingQueueEnabled = AccessConstants.isBlockingQueueEnabled();
+        if (blockingQueueEnabled) {
+            requestQueue = new LinkedBlockingQueue<HttpRequestWrapper>();
+            responseQueue = new LinkedBlockingQueue<HttpResponseWrapper>();
+        } else {
+            requestQueue = new ConcurrentLinkedQueue<HttpRequestWrapper>();
+            responseQueue = new ConcurrentLinkedQueue<HttpResponseWrapper>();
+        }
         logElements = createLogElements();
         logAccesses();
     }
@@ -102,10 +117,20 @@ public class Access {
      * logs the request and response accesses.
      */
     public void logAccesses() {
-        Thread logRequests = new LogRequests();
-        Thread logResponses = new LogResponses();
-        logRequests.start();
-        logResponses.start();
+        if (blockingQueueEnabled) {
+            Thread logRequests = new LogRequests();
+            Thread logResponses = new LogResponses();
+            logRequests.start();
+            logResponses.start();
+        } else {
+            TimerTask logRequests = new TimerLogRequests();
+            TimerTask logResponses = new TimerLogResponses();
+            Timer requestTimer = new Timer();
+            Timer responseTimer = new Timer();
+            long retryIn = 1000L * LOG_FREQUENCY_IN_SECONDS;
+            requestTimer.schedule(logRequests, 0, retryIn);
+            responseTimer.schedule(logResponses, 0, retryIn);
+        }
     }
 
     private class LogRequests extends Thread {
@@ -113,7 +138,7 @@ public class Access {
             while (true) {
                 HttpRequestWrapper req = null;
                 try {
-                    req = requestQueue.take();
+                    req = ((BlockingQueue<HttpRequestWrapper>) requestQueue).take();
                     log(req, null);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -127,10 +152,32 @@ public class Access {
             while (true) {
                 HttpResponseWrapper res = null;
                 try {
-                    res = responseQueue.take();
+                    res = ((BlockingQueue<HttpResponseWrapper>) responseQueue).take();
                     log(null, res);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    private class TimerLogRequests extends TimerTask {
+        public void run() {
+            while (!requestQueue.isEmpty()) {
+                HttpRequestWrapper req = requestQueue.poll();
+                if (req != null) {
+                    log(req, null);
+                }
+            }
+        }
+    }
+
+    private class TimerLogResponses extends TimerTask {
+        public void run() {
+            while (!responseQueue.isEmpty()) {
+                HttpResponseWrapper res = responseQueue.poll();
+                if (res != null) {
+                    log(null, res);
                 }
             }
         }
