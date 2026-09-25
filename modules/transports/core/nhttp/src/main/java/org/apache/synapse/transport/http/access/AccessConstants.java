@@ -77,6 +77,11 @@ public class AccessConstants {
 
     public static final String CONFIG_ENABLE_LOGGING = "access_log_enable";
 
+    public static final String CONFIG_ENABLE_BLOCKING_QUEUE = "access_log_blocking_queue_enable";
+
+    public static boolean isBlockingQueueEnabled() {
+        return AccessConfiguration.getInstance().getBooleanProperty(CONFIG_ENABLE_BLOCKING_QUEUE, Boolean.TRUE);
+    }
 
     public static String getLogPattern() {
         return AccessConfiguration.getInstance().getStringProperty(CONFIG_PATTERN, LOG_PATTERN);
