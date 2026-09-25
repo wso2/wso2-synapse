@@ -28,6 +28,7 @@ import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.description.TransportOutDescription;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ContinuationState;
@@ -268,6 +269,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public boolean injectMessage(final MessageContext synCtx) {
+
+        boolean tracingEnabled = RuntimeStatisticCollector.isOpenTelemetryEnabled();
+        String previousTraceId = null;
+        String previousSpanId = null;
         try {
 
             if (log.isDebugEnabled()) {
@@ -287,6 +292,23 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
 
             synCtx.setEnvironment(this);
+
+            // A Call response resumes on a transport thread that never saw the request. Back up
+            // what the thread holds, then set the IDs from the message.
+            if (tracingEnabled) {
+                previousTraceId = ThreadContext.get(SynapseConstants.TRACE_ID);
+                previousSpanId = ThreadContext.get(SynapseConstants.SPAN_ID);
+                ThreadContext.remove(SynapseConstants.TRACE_ID);
+                ThreadContext.remove(SynapseConstants.SPAN_ID);
+                Object traceId = synCtx.getProperty(SynapseConstants.JAEGER_TRACE_ID);
+                if (traceId instanceof String) {
+                    ThreadContext.put(SynapseConstants.TRACE_ID, (String) traceId);
+                }
+                Object spanId = synCtx.getProperty(SynapseConstants.JAEGER_SPAN_ID);
+                if (spanId instanceof String) {
+                    ThreadContext.put(SynapseConstants.SPAN_ID, (String) spanId);
+                }
+            }
 
             if (!invokeHandlers(synCtx)) {
                 return false;
@@ -399,6 +421,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         } finally {
             // Clear ThreadContext after message injection to prevent context leakage
             MediatorIdLogSetter.getInstance().clearMediatorId();
+            if (tracingEnabled) {
+                // Restore rather than clear: the loopback mediator re-injects the message it is
+                // mediating, so clearing would strip the enclosing flow's IDs. Stale IDs are
+                // dropped where a new message enters mediation instead.
+                restoreTracingId(SynapseConstants.TRACE_ID, previousTraceId);
+                restoreTracingId(SynapseConstants.SPAN_ID, previousSpanId);
+            }
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -814,6 +843,17 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public void setTenantInfoInitiator(TenantInfoInitiator initiator) {
         if (initiator != null) {
             tenantInfoInitiator = initiator;
+        }
+    }
+
+    /**
+     * Puts a saved ThreadContext value back, or removes the key when nothing was saved.
+     */
+    private static void restoreTracingId(String key, String value) {
+        if (value != null) {
+            ThreadContext.put(key, value);
+        } else {
+            ThreadContext.remove(key);
         }
     }
 

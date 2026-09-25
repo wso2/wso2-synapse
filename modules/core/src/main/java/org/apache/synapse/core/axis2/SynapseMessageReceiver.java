@@ -23,8 +23,10 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.engine.MessageReceiver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -43,6 +45,13 @@ public class SynapseMessageReceiver implements MessageReceiver {
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
+
+        // Mediation can begin here on a thread still holding the previous message's IDs: a flow
+        // that suspends at a Call mediator leaves them behind. Drop them before anything is logged.
+        if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
+            ThreadContext.remove(SynapseConstants.TRACE_ID);
+            ThreadContext.remove(SynapseConstants.SPAN_ID);
+        }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 

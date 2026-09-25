@@ -24,6 +24,7 @@ import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -64,6 +65,13 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     private ProxyService proxy = null;
 
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
+
+        // Mediation can begin here on a thread still holding the previous message's IDs: a flow
+        // that suspends at a Call mediator leaves them behind. Drop them before anything is logged.
+        if (RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
+            ThreadContext.remove(SynapseConstants.TRACE_ID);
+            ThreadContext.remove(SynapseConstants.SPAN_ID);
+        }
 
         boolean traceOn = proxy.getAspectConfiguration().isTracingEnabled();
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
