@@ -35,6 +35,8 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -144,14 +146,48 @@ public class Access {
      * logs the request and response accesses.
      */
     public void logAccesses() {
-        Thread logRequests = new LogRequests();
-        Thread logResponses = new LogResponses();
-        logRequests.start();
-        logResponses.start();
+        if (AccessConstants.DISPATCH_MODE_BATCH.equalsIgnoreCase(AccessConstants.getDispatchMode())) {
+            long period = 1000L * AccessConstants.getBatchInterval();
+            new Timer().schedule(new LogRequestsBatch(), period, period);
+            new Timer().schedule(new LogResponsesBatch(), period, period);
+        } else {
+            Thread logRequests = new LogRequests();
+            Thread logResponses = new LogResponses();
+            logRequests.start();
+            logResponses.start();
+        }
         if (AccessConstants.isV2LoggingEnabled()) {
             Thread logCombined = new LogCombined();
             logCombined.setName(THREAD_HTTP_ACCESS_LOG_V2);
             logCombined.start();
+        }
+    }
+
+    private class LogRequestsBatch extends TimerTask {
+        public void run() {
+            List<HttpRequestWrapper> batch = new ArrayList<HttpRequestWrapper>();
+            requestQueue.drainTo(batch);
+            for (HttpRequestWrapper req : batch) {
+                try {
+                    log(req, null);
+                } catch (Exception e) {
+                    log.warn("Error logging access entry for request", e);
+                }
+            }
+        }
+    }
+
+    private class LogResponsesBatch extends TimerTask {
+        public void run() {
+            List<HttpResponseWrapper> batch = new ArrayList<HttpResponseWrapper>();
+            responseQueue.drainTo(batch);
+            for (HttpResponseWrapper res : batch) {
+                try {
+                    log(null, res);
+                } catch (Exception e) {
+                    log.warn("Error logging access entry for response", e);
+                }
+            }
         }
     }
 
