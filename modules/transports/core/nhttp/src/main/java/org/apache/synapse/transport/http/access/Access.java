@@ -148,8 +148,8 @@ public class Access {
     public void logAccesses() {
         if (AccessConstants.DISPATCH_MODE_BATCH.equalsIgnoreCase(AccessConstants.getDispatchMode())) {
             long period = 1000L * AccessConstants.getBatchInterval();
-            new Timer().schedule(new LogRequestsBatch(), period, period);
-            new Timer().schedule(new LogResponsesBatch(), period, period);
+            new Timer().schedule(new LogRequestsBatch(), 0, period);
+            new Timer().schedule(new LogResponsesBatch(), 0, period);
         } else {
             Thread logRequests = new LogRequests();
             Thread logResponses = new LogResponses();
