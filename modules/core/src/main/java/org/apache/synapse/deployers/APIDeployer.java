@@ -126,6 +126,8 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
             // Register mediators for ID assignment after update
             MediatorIdentityManager.getInstance().assignMediatorIds(api);
 
+            executeExtendedSynapseHandlerOnArtifactUpdate(existingArtifactName, api.getName(),
+                    SynapseConstants.FAIL_SAFE_MODE_API);
             log.info("API: " + api.getName() + " has been updated from the file: " + fileName);
 
             waitForCompletion();
