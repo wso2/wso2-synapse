@@ -88,6 +88,9 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
     private final Object lock = new Object();
     private final Map<String, ForEachAggregate> activeAggregates = Collections.synchronizedMap(new HashMap<>());
     private final String id;
+    // Marks a message context whose close statistics event must be reported by reportCloseStatistics,
+    // as the flow continues without reaching completeAggregate
+    private final String closeStatisticsPendingKey;
     private SynapsePath collectionExpression = null;
     private Target target;
     private boolean parallelExecution = true;
@@ -103,6 +106,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
     public ForEachMediatorV2() {
 
         id = String.valueOf(new Random().nextLong());
+        closeStatisticsPendingKey = "FOREACH_CLOSE_STATISTICS_PENDING." + id;
     }
 
     @Override
@@ -134,6 +138,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 JsonArray list = (JsonArray) collection;
                 if (list.isEmpty()) {
                     log.info("No elements found for the expression : " + collectionExpression);
+                    markCloseStatisticsPending(synCtx);
                     return true;
                 }
                 int msgCount = list.size();
@@ -150,6 +155,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 List list = (List) collection;
                 if (list.isEmpty()) {
                     log.info("No elements found for the expression : " + collectionExpression);
+                    markCloseStatisticsPending(synCtx);
                     return true;
                 }
                 int msgCount = list.size();
@@ -168,6 +174,8 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
             handleException("Error executing Foreach mediator", e, synCtx);
         }
         if (continueWithoutAggregation) {
+            // Set after the iterations so that the iterated message contexts do not inherit the marker
+            markCloseStatisticsPending(synCtx);
             return true;
         } else {
             OperationContext opCtx
@@ -633,7 +641,28 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
     @Override
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
 
-        // Do nothing here as the close event is reported in the completeAggregate method
+        // When aggregating, the close event is reported in the completeAggregate method. Otherwise the flow
+        // continues without aggregation and the close event must be reported here, or the statistics event
+        // collection of the flow never finishes and its tracing scope is never cleaned up.
+        if (Boolean.TRUE.equals(messageContext.getProperty(closeStatisticsPendingKey))) {
+            messageContext.setProperty(closeStatisticsPendingKey, false);
+            if (currentIndex != null) {
+                super.reportCloseStatistics(messageContext, currentIndex);
+            }
+        }
+    }
+
+    /**
+     * Marks the given message context so that the close statistics event of this mediator is reported by
+     * reportCloseStatistics, as the flow continues without reaching completeAggregate.
+     *
+     * @param synCtx message context which continues the flow after this mediator
+     */
+    private void markCloseStatisticsPending(MessageContext synCtx) {
+
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            synCtx.setProperty(closeStatisticsPendingKey, true);
+        }
     }
 
     @Override
