@@ -641,4 +641,48 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
             }
         }
     }
+
+    /**
+     * Execute the ExtendedSynapseHandler when an artifact is updated in place. The previous version is reported as
+     * undeployed and the new version as deployed, so handlers always see balanced events and pick up renames.
+     * Handler failures are logged and do not fail the update, since the artifact itself has already been updated.
+     *
+     * @param existingArtifactName name of the artifact before the update
+     * @param artifactName         name of the artifact after the update, or null if the updated artifact was not
+     *                             started and only the undeployment of the previous version should be reported
+     * @param artifactType         type of the updated artifact
+     */
+    protected void executeExtendedSynapseHandlerOnArtifactUpdate(String existingArtifactName, String artifactName,
+                                                                 String artifactType) throws DeploymentException {
+        String updateTime = String.valueOf(System.currentTimeMillis());
+        List handlers = getSynapseEnvironment().getSynapseHandlers();
+        Iterator<SynapseHandler> iterator = handlers.iterator();
+        while (iterator.hasNext()) {
+            SynapseHandler handler = iterator.next();
+            if (handler instanceof AbstractExtendedSynapseHandler) {
+                AbstractExtendedSynapseHandler abstractExtendedSynapseHandler =
+                        (AbstractExtendedSynapseHandler) handler;
+                try {
+                    if (!abstractExtendedSynapseHandler.handleArtifactUnDeployment(existingArtifactName,
+                            artifactType, updateTime)) {
+                        log.warn("Synapse not executed in the artifact undeployment in path");
+                    }
+                } catch (Exception e) {
+                    log.warn("Error while executing the synapse handler: " + handler.getName()
+                            + " on the undeployment of " + artifactType + ": " + existingArtifactName, e);
+                }
+                if (artifactName != null) {
+                    try {
+                        if (!abstractExtendedSynapseHandler.handleArtifactDeployment(artifactName, artifactType,
+                                updateTime)) {
+                            log.warn("Synapse not executed in the artifact deployment in path");
+                        }
+                    } catch (Exception e) {
+                        log.warn("Error while executing the synapse handler: " + handler.getName()
+                                + " on the deployment of " + artifactType + ": " + artifactName, e);
+                    }
+                }
+            }
+        }
+    }
 }
