@@ -32,7 +32,6 @@ import org.apache.bsf.xml.XMLHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
@@ -41,7 +40,6 @@ import org.apache.synapse.script.access.ScriptAccessControl;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.config.Entry;
-import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
@@ -54,6 +52,7 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.proxy.ProxyExecutable;
 import org.jetbrains.annotations.NotNull;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.ContextFactory;
@@ -63,6 +62,7 @@ import javax.script.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -101,9 +101,28 @@ import static org.apache.synapse.mediators.bsf.ScriptMediatorConstants.RHINO_JAV
  * parameter which is the Synapse MessageContext. The function may return a boolean, if it
  * does not then true is assumed.
  */
-public class ScriptMediator extends AbstractMediator implements ManagedLifecycle {
+public class ScriptMediator extends AbstractMediator {
 
     private static final Log logger = LogFactory.getLog(ScriptMediator.class.getName());
+
+    /**
+     * Message property holding the script message contexts of the inline GraalJS scripts run on a message
+     */
+    private static final String GRAAL_SCRIPT_MESSAGE_CONTEXTS = "GRAAL_SCRIPT_MESSAGE_CONTEXTS";
+
+    /**
+     * Defines the global mc of an inline GraalJS script as an accessor. The getter reads the script message context
+     * from the given function, and a value assigned to mc replaces it, as it would for a plain global.
+     */
+    private static final Source GRAAL_MC_DEFINITION = Source.create("js",
+            "(function (global, getMc) {\n"
+                    + "    var assigned = false, value;\n"
+                    + "    Object.defineProperty(global, 'mc', {\n"
+                    + "        get: function () { return assigned ? value : getMc(); },\n"
+                    + "        set: function (v) { assigned = true; value = v; },\n"
+                    + "        configurable: true, enumerable: true\n"
+                    + "    });\n"
+                    + "})");
 
     /**
      * The registry entry key for a script loaded from the registry
@@ -183,10 +202,6 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
      * Pool ScriptEngine Resources
      */
     private BlockingQueue<ScriptEngineWrapper> pool;
-    /**
-     * Set when the mediator is destroyed, so that engines returned afterwards are closed instead of pooled
-     */
-    private volatile boolean destroyed;
     /**
      * JSON parser used to parse JSON strings
      */
@@ -315,6 +330,7 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
 
     private boolean invokeScript(MessageContext synCtx) {
         boolean returnValue;
+        Context context = null;
         try {
             //if the engine is Rhino then needs to set the class loader specifically
             if (language.equals(RHINO_JAVA_SCRIPT)) {
@@ -324,10 +340,15 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
                 }
                 cx.setApplicationClassLoader(this.loader);
             }
+            if (key != null && (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)
+                    || language.equals(MJS_JAVA_SCRIPT))) {
+                context = AccessControlUtils.createSecureGraalContext(classAccessControlConfig).build();
+                context.enter();
+            }
 
             Object returnObject;
             if (key != null) {
-                returnObject = mediateWithExternalScript(synCtx);
+                returnObject = mediateWithExternalScript(synCtx, context);
                 // If result target is set, this is V2 script mediator
                 // Set the result to the target and returnValue to true
                 if (StringUtils.isNotBlank(resultTarget) && (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)
@@ -361,6 +382,9 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
             if (language.equals(RHINO_JAVA_SCRIPT)) {
                 org.mozilla.javascript.Context.exit();
             }
+            if (context != null) {
+                context.leave();
+            }
         }
 
         return returnValue;
@@ -370,11 +394,12 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
      * Mediation implementation when the script to be executed should be loaded from the registry
      *
      * @param synCtx the message context
+     * @param context the context of script engine
      * @return script result
      * @throws ScriptException       For any errors , when compile, run the script
      * @throws NoSuchMethodException If the function is not defined in the script
      */
-    private Object mediateWithExternalScript(MessageContext synCtx)
+    private Object mediateWithExternalScript(MessageContext synCtx, Context context)
             throws ScriptException, NoSuchMethodException {
         ScriptEngineWrapper sew = null;
         Object obj;
@@ -388,8 +413,6 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
             } else {
                 helper = XMLHelper.getArgHelper(sew.getEngine());
             }
-            Context context = sew.getEngine() instanceof GraalJSScriptEngine
-                    ? ((GraalJSScriptEngine) sew.getEngine()).getPolyglotContext() : null;
             ScriptMessageContext scriptMC;
             scriptMC = getScriptMessageContext(synCtx, helper, context);
             processJSONPayload(synCtx, scriptMC);
@@ -410,7 +433,8 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
             obj = invocableScript.invokeFunction(function, scriptArgs.toArray());
         } finally {
           if(sew != null){
-              releaseScriptEngine(sew);
+              // return engine to front of queue or drop if queue is full (i.e. if getNewScriptEngine() spawns a new engine)
+              pool.offer(sew);
           }
         }
 
@@ -449,7 +473,7 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
      *
      * @param synCtx message context
      * @param helper Object which help to convert xml into OMelemnt
-     * @param context polyglot context that runs the script, only used for GraalJS
+     * @param context polyglot context that holds the JSON helpers, only used for GraalJS
      * @return Nashorn or Common script message context according to language attribute
      */
     private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper,
@@ -508,8 +532,11 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
     /**
      * Runs an inline GraalJS script in a fresh polyglot context on the inline engine of this mediator. The context
      * is not created through the script engine bindings, as those keep the context reachable from itself and it
-     * would never be collected. Once the script returns, the context is only referenced by values the script left
-     * on the message, so it is collected together with the message.
+     * would never be collected.
+     * <p/>
+     * The message keeps the script message context, and the global mc of the context only reaches it through a weak
+     * reference. Functions the script leaves on the message can still use mc while the message exists, and once the
+     * message is gone nothing keeps the context reachable, so it is collected with the message.
      *
      * @param synCtx message context
      * @return the script return value
@@ -519,14 +546,22 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
         Context context = inlineGraalContextBuilder.build();
         ScriptMessageContext scriptMC = getScriptMessageContext(synCtx, xmlHelper, context);
         processJSONPayload(synCtx, scriptMC);
-        org.graalvm.polyglot.Value global = context.eval("js", "this");
-        global.putMember(MC_VAR_NAME, scriptMC);
+
+        @SuppressWarnings("unchecked")
+        List<ScriptMessageContext> scriptMessageContexts =
+                (List<ScriptMessageContext>) synCtx.getProperty(GRAAL_SCRIPT_MESSAGE_CONTEXTS);
+        if (scriptMessageContexts == null) {
+            scriptMessageContexts = new ArrayList<>();
+            synCtx.setProperty(GRAAL_SCRIPT_MESSAGE_CONTEXTS, scriptMessageContexts);
+        }
+        scriptMessageContexts.add(scriptMC);
+        WeakReference<ScriptMessageContext> scriptMCReference = new WeakReference<>(scriptMC);
+        ProxyExecutable getMc = arguments -> scriptMCReference.get();
         try {
+            context.eval(GRAAL_MC_DEFINITION).execute(context.eval("js", "this"), getMc);
             return context.eval(inlineGraalSource).as(Object.class);
         } catch (PolyglotException e) {
             throw new ScriptException(e);
-        } finally {
-            global.removeMember(MC_VAR_NAME);
         }
     }
 
@@ -933,48 +968,6 @@ public class ScriptMediator extends AbstractMediator implements ManagedLifecycle
         }
         // fall back
         return scriptEngineWrapper;
-    }
-
-    /**
-     * Returns the engine to the pool, or closes it if the pool is full or the mediator is destroyed.
-     *
-     * @param sew script engine wrapper taken from {@link #getNewScriptEngine()}
-     */
-    private void releaseScriptEngine(ScriptEngineWrapper sew) {
-        if (!pool.offer(sew)) {
-            closeScriptEngine(sew.getEngine());
-        } else if (destroyed && pool.remove(sew)) {
-            closeScriptEngine(sew.getEngine());
-        }
-    }
-
-    /**
-     * GraalJS engines and their contexts are only released when closed, so close the polyglot engine of the
-     * given script engine. Other engines are left to the garbage collector.
-     *
-     * @param engine script engine to close
-     */
-    private void closeScriptEngine(ScriptEngine engine) {
-        if (engine instanceof GraalJSScriptEngine) {
-            ((GraalJSScriptEngine) engine).getPolyglotEngine().close();
-        }
-    }
-
-    @Override
-    public void init(SynapseEnvironment se) {
-    }
-
-    @Override
-    public void destroy() {
-        destroyed = true;
-        ScriptEngineWrapper sew;
-        while ((sew = pool.poll()) != null) {
-            closeScriptEngine(sew.getEngine());
-        }
-        closeScriptEngine(scriptEngine);
-        closeScriptEngine(jsEngine);
-        // inlineGraalEngine is not closed, as messages still in flight may hold values of its contexts. It is
-        // collected once this mediator and those messages are gone.
     }
 
     public boolean isContentAltering() {
