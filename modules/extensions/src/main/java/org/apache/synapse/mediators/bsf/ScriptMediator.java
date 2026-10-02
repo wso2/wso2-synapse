@@ -525,7 +525,8 @@ public class ScriptMediator extends AbstractMediator {
      * <p/>
      * The message keeps the script message context, and the script only gets a view of it that holds it through a
      * weak reference. So mc, aliases of it, and functions the script leaves on the message can use it while the
-     * message exists, and once the message is gone nothing in the context keeps it reachable.
+     * message exists, and once the message is gone nothing in the context keeps it reachable. A script that keeps a
+     * live view of the message itself in a global, such as the property key set, still keeps the context reachable.
      *
      * @param synCtx message context
      * @return the script return value
@@ -555,7 +556,8 @@ public class ScriptMediator extends AbstractMediator {
     }
 
     /**
-     * Delegates calls to a script message context that is only weakly referenced.
+     * Delegates calls to a script message context that is only weakly referenced. Equality is the identity of the
+     * view, as each script message context has a single view and does not override equals or hashCode itself.
      */
     private static final class WeakDelegationHandler implements InvocationHandler {
 
@@ -567,6 +569,12 @@ public class ScriptMediator extends AbstractMediator {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            if ("equals".equals(method.getName()) && method.getParameterCount() == 1) {
+                return proxy == args[0];
+            }
+            if ("hashCode".equals(method.getName()) && method.getParameterCount() == 0) {
+                return System.identityHashCode(proxy);
+            }
             ScriptMessageContext target = scriptMessageContext.get();
             if (target == null) {
                 throw new IllegalStateException("The message of this script is no longer available");
