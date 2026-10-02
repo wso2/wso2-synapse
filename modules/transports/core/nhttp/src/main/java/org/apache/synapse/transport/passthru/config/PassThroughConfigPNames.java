@@ -163,6 +163,12 @@ public interface PassThroughConfigPNames {
     public String CORRELATION_HEADER_NAME_PROPERTY = "correlation_header_name";
 
     /**
+     * Defines the regex an incoming activity ID (correlation) header value must fully match to be accepted. If the value does
+     * not match, a new correlation ID is generated. Validation is disabled when this is not set.
+     */
+    public String ACTIVITY_ID_HEADER_VALIDATION_REGEX = "activity_id_header_validation_regex";
+
+    /**
      * Defines max waiting time for a request to be queued for a worker thread
      */
     public String EXPECTED_MAX_QUEUEING_TIME = "expected_max_queueing_time";

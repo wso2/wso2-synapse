@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import javax.net.ssl.SSLException;
 import javax.ws.rs.HttpMethod;
 
@@ -97,6 +98,8 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     private static int validMaxMessageSize = Integer.MAX_VALUE;
 
+    private final Pattern correlationHeaderValidationPattern;
+
     public static final String PROPERTY_FILE = "passthru-http.properties";
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
@@ -118,6 +121,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         this.streamInterceptors = streamInterceptors;
         this.interceptStream = !streamInterceptors.isEmpty();
         this.noOfInterceptors = streamInterceptors.size();
+        this.correlationHeaderValidationPattern = conf.getCorrelationHeaderValidationPattern();
 
         String strNamePostfix = "";
         if (sourceConfiguration.getInDescription() != null &&
@@ -238,9 +242,22 @@ public class SourceHandler implements NHttpServerEventHandler {
         HttpContext httpContext = conn.getContext();
         String correlationHeaderName = PassThroughConfiguration.getInstance().getCorrelationHeaderName();
         Header[] correlationHeader = conn.getHttpRequest().getHeaders(correlationHeaderName);
-        String correlationId;
+        String correlationId = null;
         if (correlationHeader.length != 0) {
             correlationId = correlationHeader[0].getValue();
+            if (correlationHeaderValidationPattern != null && (correlationId == null
+                    || !correlationHeaderValidationPattern.matcher(correlationId).matches())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Incoming " + correlationHeaderName + " header value does not match the configured "
+                            + "validation pattern. A new correlation ID will be generated.");
+                }
+                correlationId = null;
+            }
+        }
+        if (correlationId != null) {
+            // The http context is shared across requests on a keep-alive connection, hence reset the flag that
+            // could have been set by a previous request.
+            httpContext.setAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID, false);
         } else {
             correlationId = UUID.randomUUID().toString();
             conn.getHttpRequest().setHeader(correlationHeaderName, correlationId);
