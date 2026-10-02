@@ -23,12 +23,17 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfigPNames;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.util.PassThroughTestUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.regex.Pattern;
 
 /**
@@ -44,6 +49,21 @@ public class SourceHandlerCorrelationIdTest {
     private final HttpContext httpContext = new BasicHttpContext();
     private HttpRequest request;
     private final NHttpServerConnection conn = Mockito.mock(NHttpServerConnection.class);
+
+    /**
+     * Creating a {@link SourceHandler} initializes the {@link PassThroughConfiguration} singleton, which reads
+     * passthru-http.properties only once, at class load. Since this happens before other tests set the test
+     * configuration location, the singleton is rebuilt here so that it does not leak into other tests.
+     */
+    @AfterClass
+    public static void resetPassThroughConfiguration() throws Exception {
+        PassThroughTestUtils.getPassThroughConfiguration(); // sets the test configuration location
+        Constructor<PassThroughConfiguration> constructor = PassThroughConfiguration.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        Field instance = PassThroughConfiguration.class.getDeclaredField("_instance");
+        instance.setAccessible(true);
+        instance.set(null, constructor.newInstance());
+    }
 
     @After
     public void tearDown() {
