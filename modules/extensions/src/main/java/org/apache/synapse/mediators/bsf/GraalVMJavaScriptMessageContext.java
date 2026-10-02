@@ -69,7 +69,7 @@ import java.util.Stack;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
-public class GraalVMJavaScriptMessageContext implements ScriptMessageContext {
+public class GraalVMJavaScriptMessageContext implements GraalScriptMessageContext {
 
     private static final Log logger = LogFactory.getLog(GraalVMJavaScriptMessageContext.class.getName());
 

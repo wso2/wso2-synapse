@@ -52,7 +52,6 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Source;
-import org.graalvm.polyglot.proxy.ProxyExecutable;
 import org.jetbrains.annotations.NotNull;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.ContextFactory;
@@ -63,6 +62,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -109,20 +112,6 @@ public class ScriptMediator extends AbstractMediator {
      * Message property holding the script message contexts of the inline GraalJS scripts run on a message
      */
     private static final String GRAAL_SCRIPT_MESSAGE_CONTEXTS = "GRAAL_SCRIPT_MESSAGE_CONTEXTS";
-
-    /**
-     * Defines the global mc of an inline GraalJS script as an accessor. The getter reads the script message context
-     * from the given function, and a value assigned to mc replaces it, as it would for a plain global.
-     */
-    private static final Source GRAAL_MC_DEFINITION = Source.create("js",
-            "(function (global, getMc) {\n"
-                    + "    var assigned = false, value;\n"
-                    + "    Object.defineProperty(global, 'mc', {\n"
-                    + "        get: function () { return assigned ? value : getMc(); },\n"
-                    + "        set: function (v) { assigned = true; value = v; },\n"
-                    + "        configurable: true, enumerable: true\n"
-                    + "    });\n"
-                    + "})");
 
     /**
      * The registry entry key for a script loaded from the registry
@@ -534,9 +523,9 @@ public class ScriptMediator extends AbstractMediator {
      * is not created through the script engine bindings, as those keep the context reachable from itself and it
      * would never be collected.
      * <p/>
-     * The message keeps the script message context, and the global mc of the context only reaches it through a weak
-     * reference. Functions the script leaves on the message can still use mc while the message exists, and once the
-     * message is gone nothing keeps the context reachable, so it is collected with the message.
+     * The message keeps the script message context, and the script only gets a view of it that holds it through a
+     * weak reference. So mc, aliases of it, and functions the script leaves on the message can use it while the
+     * message exists, and once the message is gone nothing in the context keeps it reachable.
      *
      * @param synCtx message context
      * @return the script return value
@@ -555,13 +544,38 @@ public class ScriptMediator extends AbstractMediator {
             synCtx.setProperty(GRAAL_SCRIPT_MESSAGE_CONTEXTS, scriptMessageContexts);
         }
         scriptMessageContexts.add(scriptMC);
-        WeakReference<ScriptMessageContext> scriptMCReference = new WeakReference<>(scriptMC);
-        ProxyExecutable getMc = arguments -> scriptMCReference.get();
+        Object scriptMCView = Proxy.newProxyInstance(GraalScriptMessageContext.class.getClassLoader(),
+                new Class<?>[]{GraalScriptMessageContext.class}, new WeakDelegationHandler(scriptMC));
         try {
-            context.eval(GRAAL_MC_DEFINITION).execute(context.eval("js", "this"), getMc);
+            context.eval("js", "this").putMember(MC_VAR_NAME, scriptMCView);
             return context.eval(inlineGraalSource).as(Object.class);
         } catch (PolyglotException e) {
             throw new ScriptException(e);
+        }
+    }
+
+    /**
+     * Delegates calls to a script message context that is only weakly referenced.
+     */
+    private static final class WeakDelegationHandler implements InvocationHandler {
+
+        private final WeakReference<ScriptMessageContext> scriptMessageContext;
+
+        WeakDelegationHandler(ScriptMessageContext scriptMessageContext) {
+            this.scriptMessageContext = new WeakReference<>(scriptMessageContext);
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            ScriptMessageContext target = scriptMessageContext.get();
+            if (target == null) {
+                throw new IllegalStateException("The message of this script is no longer available");
+            }
+            try {
+                return method.invoke(target, args);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
         }
     }
 
