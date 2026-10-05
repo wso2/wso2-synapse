@@ -254,15 +254,19 @@ public class SourceHandler implements NHttpServerEventHandler {
                 correlationId = null;
             }
         }
-        if (correlationId != null) {
-            // The http context is shared across requests on a keep-alive connection, hence reset the flag that
-            // could have been set by a previous request.
-            httpContext.setAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID, false);
-        } else {
+        boolean systemGenerated = correlationId == null;
+        if (systemGenerated) {
             correlationId = UUID.randomUUID().toString();
-            conn.getHttpRequest().setHeader(correlationHeaderName, correlationId);
-            httpContext.setAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID, true);
         }
+        if (systemGenerated || correlationHeaderValidationPattern != null) {
+            // Remove all occurrences so that duplicate (unvalidated) header values are not forwarded as excess
+            // headers, and retain only the resolved correlation ID.
+            conn.getHttpRequest().removeHeaders(correlationHeaderName);
+            conn.getHttpRequest().addHeader(correlationHeaderName, correlationId);
+        }
+        // The http context is shared across requests on a keep-alive connection, hence the flag is always set to
+        // avoid retaining the value set by a previous request.
+        httpContext.setAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID, systemGenerated);
         httpContext.setAttribute(CorrelationConstants.CORRELATION_ID, correlationId);
     }
 

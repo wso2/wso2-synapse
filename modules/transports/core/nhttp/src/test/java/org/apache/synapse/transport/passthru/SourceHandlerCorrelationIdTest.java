@@ -81,10 +81,12 @@ public class SourceHandlerCorrelationIdTest {
     /**
      * Simulates a new request arriving on the same (keep-alive) connection.
      */
-    private void newRequest(String activityId) {
+    private void newRequest(String... activityIds) {
         request = new BasicHttpRequest("GET", "/test");
-        if (activityId != null) {
-            request.addHeader(HEADER, activityId);
+        if (activityIds != null) {
+            for (String activityId : activityIds) {
+                request.addHeader(HEADER, activityId);
+            }
         }
         Mockito.when(conn.getHttpRequest()).thenReturn(request);
     }
@@ -101,7 +103,7 @@ public class SourceHandlerCorrelationIdTest {
     public void testSystemGeneratedFlagResetOnKeepAliveConnection() {
         SourceHandler handler = createHandler(null);
 
-        newRequest(null);
+        newRequest((String[]) null);
         handler.setCorrelationId(conn);
         Assert.assertEquals(Boolean.TRUE, systemGenerated());
 
@@ -149,15 +151,34 @@ public class SourceHandlerCorrelationIdTest {
     @Test
     public void testAbsentHeaderGeneratesId() {
         SourceHandler handler = createHandler(REGEX);
-        newRequest(null);
+        newRequest((String[]) null);
         handler.setCorrelationId(conn);
         Assert.assertTrue(UUID_PATTERN.matcher((String) correlationId()).matches());
         Assert.assertEquals(Boolean.TRUE, systemGenerated());
         Assert.assertEquals(correlationId(), request.getFirstHeader(HEADER).getValue());
     }
 
-    private void assertReplaced(SourceHandler handler, String activityId) {
-        newRequest(activityId);
+    @Test
+    public void testDuplicateHeadersRemovedWhenFirstValueValid() {
+        SourceHandler handler = createHandler(REGEX);
+        newRequest("abc-123", "INJECT<?>");
+        handler.setCorrelationId(conn);
+        Assert.assertEquals("abc-123", correlationId());
+        Assert.assertEquals(Boolean.FALSE, systemGenerated());
+        Assert.assertEquals(1, request.getHeaders(HEADER).length);
+        Assert.assertEquals("abc-123", request.getFirstHeader(HEADER).getValue());
+    }
+
+    @Test
+    public void testDuplicateHeadersRemovedWhenFirstValueInvalid() {
+        SourceHandler handler = createHandler(REGEX);
+        assertReplaced(handler, "INJECT<1>", "INJECT<2>");
+        assertReplaced(handler, "INJECT<?>", "abc-123");
+    }
+
+    private void assertReplaced(SourceHandler handler, String... activityIds) {
+        String activityId = activityIds[0];
+        newRequest(activityIds);
         handler.setCorrelationId(conn);
         String id = (String) correlationId();
         Assert.assertTrue("Expected generated UUID for '" + activityId + "' but got " + id,
