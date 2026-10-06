@@ -185,6 +185,28 @@ public class ProxyServiceDeployerTest {
     }
 
     /**
+     * Test that updating a proxy service without renaming it reports only the deployment to the extended synapse
+     * handlers, since the proxy service is not undeployed
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testSameNameUpdateDoesNotReportUndeployment() throws Exception {
+        RecordingHandler handler = new RecordingHandler(false, false);
+        SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
+        ProxyServiceDeployer proxyServiceDeployer = createDeployer(synapseConfiguration, handler);
+
+        proxyServiceDeployer.deploySynapseArtifact(AXIOMUtil.stringToOM(getProxyXML("TestProxy")), "sampleFile",
+                new Properties());
+        proxyServiceDeployer.updateSynapseArtifact(AXIOMUtil.stringToOM(getProxyXML("TestProxy")),
+                "sampleFile", "TestProxy", new Properties());
+
+        Assert.assertEquals("Unexpected handler events!", Arrays.asList(
+                "deploy:TestProxy:" + SynapseConstants.PROXY_SERVICE_TYPE,
+                "deploy:TestProxy:" + SynapseConstants.PROXY_SERVICE_TYPE), handler.events);
+    }
+
+    /**
      * Test that a failing extended synapse handler does not fail the update of a proxy service
      *
      * @throws Exception
