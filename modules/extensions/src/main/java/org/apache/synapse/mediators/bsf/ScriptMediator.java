@@ -49,6 +49,9 @@ import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.mediators.v2.ext.InputArgument;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.PolyglotException;
+import org.graalvm.polyglot.Source;
 import org.jetbrains.annotations.NotNull;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.ContextFactory;
@@ -58,6 +61,11 @@ import javax.script.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -101,6 +109,11 @@ public class ScriptMediator extends AbstractMediator {
     private static final Log logger = LogFactory.getLog(ScriptMediator.class.getName());
 
     /**
+     * Message property holding the script message contexts of the inline GraalJS scripts run on a message
+     */
+    private static final String GRAAL_SCRIPT_MESSAGE_CONTEXTS = "GRAAL_SCRIPT_MESSAGE_CONTEXTS";
+
+    /**
      * The registry entry key for a script loaded from the registry
      * Handle both static and dynamic(Xpath) Keys
      */
@@ -137,6 +150,16 @@ public class ScriptMediator extends AbstractMediator {
      * The compiled script. Only used for inline scripts
      */
     private CompiledScript compiledScript;
+    /**
+     * The source of an inline GraalJS script
+     */
+    private Source inlineGraalSource;
+    /**
+     * Engine and context configuration used to run an inline GraalJS script. Contexts sharing an engine must share
+     * the same host access configuration, so the builder is created once.
+     */
+    private Engine inlineGraalEngine;
+    private Context.Builder inlineGraalContextBuilder;
     /**
      * The BSF helper to convert between the XML representations used by Java
      * and the scripting language
@@ -306,7 +329,8 @@ public class ScriptMediator extends AbstractMediator {
                 }
                 cx.setApplicationClassLoader(this.loader);
             }
-            if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT) || language.equals(MJS_JAVA_SCRIPT)) {
+            if (key != null && (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT)
+                    || language.equals(MJS_JAVA_SCRIPT))) {
                 context = AccessControlUtils.createSecureGraalContext(classAccessControlConfig).build();
                 context.enter();
             }
@@ -324,7 +348,7 @@ public class ScriptMediator extends AbstractMediator {
                     returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
                 }
             } else {
-                returnObject = mediateForInlineScript(synCtx, context);
+                returnObject = mediateForInlineScript(synCtx);
                 returnValue = !(returnObject != null && returnObject instanceof Boolean) || (Boolean) returnObject;
             }
         } catch (ScriptException e) {
@@ -347,10 +371,8 @@ public class ScriptMediator extends AbstractMediator {
             if (language.equals(RHINO_JAVA_SCRIPT)) {
                 org.mozilla.javascript.Context.exit();
             }
-            if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT) || language.equals(MJS_JAVA_SCRIPT)) {
-                if (context != null) {
-                    context.leave();
-                }
+            if (context != null) {
+                context.leave();
             }
         }
 
@@ -440,6 +462,7 @@ public class ScriptMediator extends AbstractMediator {
      *
      * @param synCtx message context
      * @param helper Object which help to convert xml into OMelemnt
+     * @param context polyglot context that holds the JSON helpers, only used for GraalJS
      * @return Nashorn or Common script message context according to language attribute
      */
     private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper,
@@ -476,9 +499,12 @@ public class ScriptMediator extends AbstractMediator {
      * @return true, or the script return value
      * @throws ScriptException For any errors , when compile , run the script
      */
-    private Object mediateForInlineScript(MessageContext synCtx, Context context) throws ScriptException {
+    private Object mediateForInlineScript(MessageContext synCtx) throws ScriptException {
+        if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT) || language.equals(MJS_JAVA_SCRIPT)) {
+            return mediateForInlineGraalScript(synCtx);
+        }
         ScriptMessageContext scriptMC;
-        scriptMC = getScriptMessageContext(synCtx, xmlHelper, context);
+        scriptMC = getScriptMessageContext(synCtx, xmlHelper, null);
         processJSONPayload(synCtx, scriptMC);
         Bindings bindings = scriptEngine.createBindings();
         bindings.put(MC_VAR_NAME, scriptMC);
@@ -490,6 +516,75 @@ public class ScriptMediator extends AbstractMediator {
             response = scriptEngine.eval(scriptSourceCode, bindings);
         }
         return response;
+    }
+
+    /**
+     * Runs an inline GraalJS script in a fresh polyglot context on the inline engine of this mediator. The context
+     * is not created through the script engine bindings, as those keep the context reachable from itself and it
+     * would never be collected.
+     * <p/>
+     * The message keeps the script message context, and the script only gets a view of it that holds it through a
+     * weak reference. So mc, aliases of it, and functions the script leaves on the message can use it while the
+     * message exists, and once the message is gone nothing in the context keeps it reachable. A script that keeps a
+     * live view of the message itself in a global, such as the property key set, still keeps the context reachable.
+     *
+     * @param synCtx message context
+     * @return the script return value
+     * @throws ScriptException for any errors when running the script
+     */
+    private Object mediateForInlineGraalScript(MessageContext synCtx) throws ScriptException {
+        Context context = inlineGraalContextBuilder.build();
+        ScriptMessageContext scriptMC = getScriptMessageContext(synCtx, xmlHelper, context);
+        processJSONPayload(synCtx, scriptMC);
+
+        @SuppressWarnings("unchecked")
+        List<ScriptMessageContext> scriptMessageContexts =
+                (List<ScriptMessageContext>) synCtx.getProperty(GRAAL_SCRIPT_MESSAGE_CONTEXTS);
+        if (scriptMessageContexts == null) {
+            scriptMessageContexts = new ArrayList<>();
+            synCtx.setProperty(GRAAL_SCRIPT_MESSAGE_CONTEXTS, scriptMessageContexts);
+        }
+        scriptMessageContexts.add(scriptMC);
+        Object scriptMCView = Proxy.newProxyInstance(GraalScriptMessageContext.class.getClassLoader(),
+                new Class<?>[]{GraalScriptMessageContext.class}, new WeakDelegationHandler(scriptMC));
+        try {
+            context.eval("js", "this").putMember(MC_VAR_NAME, scriptMCView);
+            return context.eval(inlineGraalSource).as(Object.class);
+        } catch (PolyglotException e) {
+            throw new ScriptException(e);
+        }
+    }
+
+    /**
+     * Delegates calls to a script message context that is only weakly referenced. Equality is the identity of the
+     * view, as each script message context has a single view and does not override equals or hashCode itself.
+     */
+    private static final class WeakDelegationHandler implements InvocationHandler {
+
+        private final WeakReference<ScriptMessageContext> scriptMessageContext;
+
+        WeakDelegationHandler(ScriptMessageContext scriptMessageContext) {
+            this.scriptMessageContext = new WeakReference<>(scriptMessageContext);
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            if ("equals".equals(method.getName()) && method.getParameterCount() == 1) {
+                return proxy == args[0];
+            }
+            if ("hashCode".equals(method.getName()) && method.getParameterCount() == 0) {
+                return System.identityHashCode(proxy);
+            }
+            ScriptMessageContext target = scriptMessageContext.get();
+            if (target == null) {
+                throw new IllegalStateException("The message of this script is no longer available");
+            }
+            try {
+                return method.invoke(target, args);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        }
     }
 
     private void processJSONPayload(MessageContext synCtx, ScriptMessageContext scriptMC) throws ScriptException {
@@ -549,6 +644,12 @@ public class ScriptMediator extends AbstractMediator {
                             "compiling script code..");
                 }
                 compiledScript = ((Compilable) scriptEngine).compile(scriptSourceCode);
+                if (language.equals(JAVA_SCRIPT) || language.equals(GRAAL_JAVA_SCRIPT) || language.equals(MJS_JAVA_SCRIPT)) {
+                    inlineGraalSource = Source.create("js", scriptSourceCode);
+                    inlineGraalEngine = Engine.newBuilder().allowExperimentalOptions(true).build();
+                    inlineGraalContextBuilder = AccessControlUtils.createSecureGraalContext(classAccessControlConfig)
+                            .engine(inlineGraalEngine);
+                }
             } else {
                 // do nothing. If the script engine doesn't support Compilable then
                 // the inline script will be evaluated on each invocation
