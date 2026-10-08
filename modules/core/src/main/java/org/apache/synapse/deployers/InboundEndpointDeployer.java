@@ -124,6 +124,8 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
                 log.info("Inbound Endpoint: " + existingArtifactName + " has been undeployed");
             }
 
+            executeExtendedSynapseHandlerOnArtifactUpdate(existingArtifactName, inboundEndpoint.getName(),
+                    ARTIFACT_TYPE);
             log.info("Inbound Endpoint: " + inboundEndpoint.getName() + " has been updated from the file: " + fileName);
 
             waitForCompletion();

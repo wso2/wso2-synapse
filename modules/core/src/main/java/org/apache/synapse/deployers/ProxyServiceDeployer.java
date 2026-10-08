@@ -179,6 +179,9 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     if (log.isDebugEnabled()) {
                         log.debug("Skipping proxy Startup for ProxyService : " + proxy.getName());
                     }
+                    // The previous version has been stopped and the new one is not started
+                    executeExtendedSynapseHandlerOnArtifactUpdate(existingArtifactName, null,
+                            SynapseConstants.PROXY_SERVICE_TYPE);
                     return proxy.getName();
                 }
 
@@ -190,6 +193,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("ProxyService " + (existingArtifactName.equals(proxy.getName()) ?
                             "update" : "deployment") + " from file : " + fileName + " : Completed");
                 }
+                executeExtendedSynapseHandlerOnArtifactUpdate(existingArtifactName, proxy.getName(),
+                        SynapseConstants.PROXY_SERVICE_TYPE);
                 log.info("ProxyService named '" + proxy.getName()
                         + "' has been " + (existingArtifactName.equals(proxy.getName()) ?
                             "update" : "deployed") + " from file : " + fileName);
