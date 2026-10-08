@@ -23,6 +23,8 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.synapse.commons.property.PropertyHolder;
+import org.apache.synapse.commons.resolvers.ResolverException;
 import org.junit.Test;
 
 import java.io.File;
@@ -36,6 +38,7 @@ public class TaskDescriptionFactoryTest {
     private final OMNamespace SYNAPSE_OMNAMESPACE = OMAbstractFactory.getOMFactory()
             .createOMNamespace(SYNAPSE_NAMESPACE, "");
     private final String TASK_CLASS_NAME = "org.apache.synapse.task.impl.CustomTaskTestImpl";
+    private static final String START_ON_LOAD_CONFIG_KEY = "taskStartOnLoadTestKey";
 
     @Test()
     public void createTaskDescriptionTest() throws FileNotFoundException, XMLStreamException {
@@ -61,6 +64,43 @@ public class TaskDescriptionFactoryTest {
         String path = this.getClass().getClassLoader().getResource("task/taskNonExistingTaskClass.xml").getFile();
         OMElement taskOme = loadOMElement(path);
         TaskDescriptionFactory.createTaskDescription(taskOme, SYNAPSE_OMNAMESPACE);
+    }
+
+    @Test
+    public void createTaskDescriptionStartOnLoadFromConfigTest() throws XMLStreamException {
+        try {
+            PropertyHolder.getInstance().setProperty(START_ON_LOAD_CONFIG_KEY, "false");
+            TaskDescription taskDescription = TaskDescriptionFactory.createTaskDescription(
+                    createTaskWithStartOnLoad("${configs." + START_ON_LOAD_CONFIG_KEY + "}"), SYNAPSE_OMNAMESPACE);
+            Assert.assertFalse("startOnLoad should resolve to false", taskDescription.isStartOnLoad());
+
+            PropertyHolder.getInstance().setProperty(START_ON_LOAD_CONFIG_KEY, "true");
+            taskDescription = TaskDescriptionFactory.createTaskDescription(
+                    createTaskWithStartOnLoad("${configs." + START_ON_LOAD_CONFIG_KEY + "}"), SYNAPSE_OMNAMESPACE);
+            Assert.assertTrue("startOnLoad should resolve to true", taskDescription.isStartOnLoad());
+        } finally {
+            PropertyHolder.getInstance().getProperties().remove(START_ON_LOAD_CONFIG_KEY);
+        }
+    }
+
+    @Test(expected = ResolverException.class)
+    public void createTaskDescriptionStartOnLoadUndefinedConfigTest() throws XMLStreamException {
+        TaskDescriptionFactory.createTaskDescription(
+                createTaskWithStartOnLoad("${configs." + START_ON_LOAD_CONFIG_KEY + "}"), SYNAPSE_OMNAMESPACE);
+    }
+
+    @Test
+    public void createTaskDescriptionStartOnLoadLiteralTest() throws XMLStreamException {
+        Assert.assertFalse(TaskDescriptionFactory.createTaskDescription(
+                createTaskWithStartOnLoad("false"), SYNAPSE_OMNAMESPACE).isStartOnLoad());
+        Assert.assertTrue(TaskDescriptionFactory.createTaskDescription(
+                createTaskWithStartOnLoad("true"), SYNAPSE_OMNAMESPACE).isStartOnLoad());
+    }
+
+    private OMElement createTaskWithStartOnLoad(String startOnLoad) throws XMLStreamException {
+        return AXIOMUtil.stringToOM("<task xmlns=\"" + SYNAPSE_NAMESPACE + "\" class=\"" + TASK_CLASS_NAME +
+                "\" name=\"startOnLoadTask\" group=\"TestGroup\" startOnLoad=\"" + startOnLoad + "\">" +
+                "<trigger interval=\"5\"/></task>");
     }
 
     private OMElement loadOMElement(String path) throws FileNotFoundException, XMLStreamException {

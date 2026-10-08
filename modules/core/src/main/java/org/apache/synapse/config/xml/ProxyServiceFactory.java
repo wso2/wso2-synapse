@@ -133,7 +133,9 @@ public class ProxyServiceFactory {
         OMAttribute startOnLoad = elem.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "startOnLoad"));
         if (startOnLoad != null) {
-            proxy.setStartOnLoad(Boolean.valueOf(startOnLoad.getAttributeValue()));
+            String resolvedStartOnLoad =
+                    ResolverFactory.getInstance().getResolver(startOnLoad.getAttributeValue()).resolve();
+            proxy.setStartOnLoad(Boolean.parseBoolean(resolvedStartOnLoad));
         } else {
             proxy.setStartOnLoad(true);
         }
