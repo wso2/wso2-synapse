@@ -46,6 +46,11 @@ public class ScriptMediatorConstants {
     public static final String GRAAL_JAVA_SCRIPT = "graalJs";
 
     /**
+     * Name of the java script language with usage of graal engine (module alias).
+     */
+    public static final String MJS_JAVA_SCRIPT = "mjs";
+
+    /**
      * Name of the nashorn java script engine.
      */
     public static final String NASHORN = "nashorn";
@@ -69,4 +74,10 @@ public class ScriptMediatorConstants {
      * Default Script Engine
      */
     public static String DEFAULT_SCRIPT_ENGINE = "synapse.script.mediator.default.engine";
+
+    /**
+     * Name of the synapse.properties entry holding the comma separated list of script languages
+     * that may be used by a script mediator. When the entry is absent, no restriction is applied.
+     */
+    public static final String ALLOWED_SCRIPT_LANGUAGES = "synapse.script.mediator.allowed.languages";
 }
