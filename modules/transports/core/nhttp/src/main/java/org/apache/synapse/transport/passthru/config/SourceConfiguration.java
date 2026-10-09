@@ -138,6 +138,8 @@ public class SourceConfiguration extends BaseConfiguration {
             }
         }
         populatePreserveHttpHeaders(conf.getResponsePreseveHttpHeaders());
+        duplicateResponseContentTypeHeaderRemovalEnabled =
+                conf.isDuplicateResponseContentTypeHeaderRemovalEnabled();
     }
 
     public HttpParams getHttpParams() {
