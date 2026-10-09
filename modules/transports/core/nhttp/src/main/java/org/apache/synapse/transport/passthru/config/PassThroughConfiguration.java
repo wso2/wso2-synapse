@@ -30,6 +30,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * This class encapsulates pass-through http transport tuning configurations specified via a
@@ -267,6 +269,26 @@ public class PassThroughConfiguration {
     public String getCorrelationHeaderName() {
         return ConfigurationBuilderUtil.getStringProperty(PassThroughConfigPNames.CORRELATION_HEADER_NAME_PROPERTY,
                 PassThroughConstants.CORRELATION_DEFAULT_HEADER, props);
+    }
+
+    /**
+     * Returns the compiled pattern an incoming correlation header value must match, or null if validation is not
+     * configured or the configured regex is invalid.
+     *
+     * @return compiled correlation header validation pattern or null
+     */
+    public Pattern getCorrelationHeaderValidationPattern() {
+        String regex = getStringProperty(PassThroughConfigPNames.ACTIVITY_ID_HEADER_VALIDATION_REGEX, null);
+        if (regex == null || regex.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Pattern.compile(regex.trim());
+        } catch (PatternSyntaxException e) {
+            log.warn("Invalid regex configured for " + PassThroughConfigPNames.ACTIVITY_ID_HEADER_VALIDATION_REGEX
+                    + ". Activity ID header validation is disabled. " + e.getMessage());
+            return null;
+        }
     }
 
     public String getExpectedMaxQueueingTime() {
