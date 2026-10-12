@@ -115,7 +115,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                              + "' has been deployed from file : " + filePath);
 
                     if (!proxy.isStartOnLoad()) {
-                        proxy.stop(getSynapseConfiguration());
+                        // not persisted, so that changing startOnLoad takes effect after a restart
+                        proxy.stop(getSynapseConfiguration(), false);
                         log.info("ProxyService named '" + proxy.getName()
                                  + "' has been stopped as startOnLoad parameter is set to false");
                     }

@@ -713,7 +713,8 @@ public class Axis2SynapseController implements SynapseController {
                 if (proxyService != null) {
                     log.info("Deployed Proxy service : " + proxy.getName());
                     if (!proxy.isStartOnLoad()) {
-                        proxy.stop(synapseConfiguration);
+                        // not persisted, so that changing startOnLoad takes effect after a restart
+                        proxy.stop(synapseConfiguration, false);
                     }
                 } else {
                     log.warn("The proxy service " + proxy.getName() + " will NOT be available");
