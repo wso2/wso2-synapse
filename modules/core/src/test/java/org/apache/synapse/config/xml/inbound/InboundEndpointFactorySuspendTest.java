@@ -55,6 +55,12 @@ public class InboundEndpointFactorySuspendTest {
         assertFalse(createInboundEndpoint("suspend=\"${configs." + CONFIG_KEY + "}\"").isSuspend());
     }
 
+    @Test
+    public void testSuspendResolvedValueWithWhitespace() throws XMLStreamException {
+        PropertyHolder.getInstance().setProperty(CONFIG_KEY, " true \n");
+        assertTrue(createInboundEndpoint("suspend=\"${configs." + CONFIG_KEY + "}\"").isSuspend());
+    }
+
     @Test(expected = ResolverException.class)
     public void testSuspendUndefinedConfigKey() throws XMLStreamException {
         createInboundEndpoint("suspend=\"${configs." + CONFIG_KEY + "}\"");

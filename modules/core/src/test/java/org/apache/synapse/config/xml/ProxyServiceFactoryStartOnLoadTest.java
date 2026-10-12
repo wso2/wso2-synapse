@@ -49,6 +49,12 @@ public class ProxyServiceFactoryStartOnLoadTest extends AbstractTestCase {
         assertFalse("startOnLoad should resolve to false", proxy.isStartOnLoad());
     }
 
+    public void testStartOnLoadResolvedValueWithWhitespace() {
+        PropertyHolder.getInstance().setProperty(CONFIG_KEY, " true \n");
+        ProxyService proxy = createProxy("startOnLoad=\"${configs." + CONFIG_KEY + "}\"");
+        assertTrue("Whitespace around the resolved value should be ignored", proxy.isStartOnLoad());
+    }
+
     public void testStartOnLoadUndefinedConfigKey() {
         try {
             createProxy("startOnLoad=\"${configs." + CONFIG_KEY + "}\"");

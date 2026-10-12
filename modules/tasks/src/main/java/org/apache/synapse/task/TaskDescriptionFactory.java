@@ -72,7 +72,8 @@ public class TaskDescriptionFactory {
                     new QName(NULL_NAMESPACE, TaskConstants.START_ON_LOAD_ATTRIBUTE));
             if (startOnLoad != null) {
                 String resolvedStartOnLoad = ResolverFactory.getInstance().getResolver(startOnLoad).resolve();
-                taskDescription.setTaskStartOnLoad(Boolean.parseBoolean(resolvedStartOnLoad));
+                taskDescription.setTaskStartOnLoad(
+                        resolvedStartOnLoad != null && Boolean.parseBoolean(resolvedStartOnLoad.trim()));
             } else {
                 taskDescription.setTaskStartOnLoad(true);
             }

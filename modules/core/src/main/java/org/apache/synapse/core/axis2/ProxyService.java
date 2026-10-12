@@ -989,21 +989,25 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             axisConfig.notifyObservers(new AxisEvent(AxisEvent.SERVICE_STOP, as), as);
             return;
         }
+        boolean skipParamAdded = false;
         try {
             as.addParameter(DeploymentInterceptor.SKIP_SERVICE_STATE_PERSISTENCE_PARAM, Boolean.TRUE.toString());
+            skipParamAdded = true;
         } catch (AxisFault e) {
-            auditWarn("Unable to skip persisting the stopped state of proxy service : " + name);
+            auditWarn("Unable to skip persisting the stopped state of proxy service : " + name + ". "
+                    + e.getMessage());
         }
         try {
             axisConfig.notifyObservers(new AxisEvent(AxisEvent.SERVICE_STOP, as), as);
         } finally {
+            // only remove the parameter added above, never one defined elsewhere
             Parameter skipParam = as.getParameter(DeploymentInterceptor.SKIP_SERVICE_STATE_PERSISTENCE_PARAM);
-            if (skipParam != null) {
+            if (skipParamAdded && skipParam != null) {
                 try {
                     as.removeParameter(skipParam);
                 } catch (AxisFault e) {
                     auditWarn("Unable to remove parameter " + DeploymentInterceptor.SKIP_SERVICE_STATE_PERSISTENCE_PARAM
-                            + " from proxy service : " + name);
+                            + " from proxy service : " + name + ". " + e.getMessage());
                 }
             }
         }

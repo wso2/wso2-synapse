@@ -135,7 +135,7 @@ public class ProxyServiceFactory {
         if (startOnLoad != null) {
             String resolvedStartOnLoad =
                     ResolverFactory.getInstance().getResolver(startOnLoad.getAttributeValue()).resolve();
-            proxy.setStartOnLoad(Boolean.parseBoolean(resolvedStartOnLoad));
+            proxy.setStartOnLoad(resolvedStartOnLoad != null && Boolean.parseBoolean(resolvedStartOnLoad.trim()));
         } else {
             proxy.setStartOnLoad(true);
         }
