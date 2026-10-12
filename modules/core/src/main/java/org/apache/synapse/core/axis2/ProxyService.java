@@ -48,6 +48,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.deployers.interceptor.DeploymentInterceptor;
 import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.WSDLEndpoint;
@@ -949,6 +950,17 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
      * @param synCfg the synapse configuration
      */
     public void stop(SynapseConfiguration synCfg) {
+        stop(synCfg, true);
+    }
+
+    /**
+     * Stop the proxy service
+     * @param synCfg the synapse configuration
+     * @param persistState whether the stopped state should be persisted and restored on the next deployment.
+     *                     This should be false when the proxy is stopped because of its configuration (e.g.
+     *                     startOnLoad=false), so that a later configuration change takes effect after a restart.
+     */
+    public void stop(SynapseConfiguration synCfg, boolean persistState) {
         AxisConfiguration axisConfig = synCfg.getAxisConfiguration();
         if (axisConfig != null) {
 
@@ -958,12 +970,46 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                 if (as.isActive()) {
                     as.setActive(false);
                 }
-                axisConfig.notifyObservers(new AxisEvent(AxisEvent.SERVICE_STOP, as), as);
+                notifyServiceStop(axisConfig, as, persistState);
             }
             this.setRunning(false);
             auditInfo("Stopped the proxy service : " + name);
         } else {
             auditWarn("Unable to stop proxy service : " + name + ". Couldn't access Axis configuration");
+        }
+    }
+
+    /**
+     * Notifies the observers that the service has stopped. The event is always fired so that transport listeners
+     * stop listening for the service; when the state should not be persisted, the service is marked so that the
+     * DeploymentInterceptor skips persisting it.
+     */
+    private void notifyServiceStop(AxisConfiguration axisConfig, AxisService as, boolean persistState) {
+        if (persistState) {
+            axisConfig.notifyObservers(new AxisEvent(AxisEvent.SERVICE_STOP, as), as);
+            return;
+        }
+        boolean skipParamAdded = false;
+        try {
+            as.addParameter(DeploymentInterceptor.SKIP_SERVICE_STATE_PERSISTENCE_PARAM, Boolean.TRUE.toString());
+            skipParamAdded = true;
+        } catch (AxisFault e) {
+            auditWarn("Unable to skip persisting the stopped state of proxy service : " + name + ". "
+                    + e.getMessage());
+        }
+        try {
+            axisConfig.notifyObservers(new AxisEvent(AxisEvent.SERVICE_STOP, as), as);
+        } finally {
+            // only remove the parameter added above, never one defined elsewhere
+            Parameter skipParam = as.getParameter(DeploymentInterceptor.SKIP_SERVICE_STATE_PERSISTENCE_PARAM);
+            if (skipParamAdded && skipParam != null) {
+                try {
+                    as.removeParameter(skipParam);
+                } catch (AxisFault e) {
+                    auditWarn("Unable to remove parameter " + DeploymentInterceptor.SKIP_SERVICE_STATE_PERSISTENCE_PARAM
+                            + " from proxy service : " + name + ". " + e.getMessage());
+                }
+            }
         }
     }
 

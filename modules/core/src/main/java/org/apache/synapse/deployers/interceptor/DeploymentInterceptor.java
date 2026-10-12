@@ -45,6 +45,7 @@ public class DeploymentInterceptor implements AxisObserver {
     public static final String SERVICES = "/services/";
     public static final String ACTIVE = "service.active";
     public static final String KEEP_SERVICE_HISTORY_PARAM = "keepServiceHistory";
+    public static final String SKIP_SERVICE_STATE_PERSISTENCE_PARAM = "skipServiceStatePersistence";
     private static final Log log = LogFactory.getLog(DeploymentInterceptor.class);
     private static final String SERVICE_GROUPS = "/repository/axis2/service-groups/";
     private Registry synapseRegistry;
@@ -66,7 +67,13 @@ public class DeploymentInterceptor implements AxisObserver {
         if (eventType == AxisEvent.SERVICE_DEPLOY) {
             axisService.setActive(getPersistedServiceStatus(axisService));
         } else if (eventType == AxisEvent.SERVICE_STOP) {
-            persistServiceStatus(axisService);
+            if (skipStatePersistence(axisService)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Skipping persisting the stopped state of service: " + axisService.getName());
+                }
+            } else {
+                persistServiceStatus(axisService);
+            }
         } else if (eventType == AxisEvent.SERVICE_START) {
             removeServiceStatus(axisService);
         } else if (eventType == AxisEvent.SERVICE_REMOVE) {
@@ -161,6 +168,16 @@ public class DeploymentInterceptor implements AxisObserver {
                         "Service [" + axisService.getName() + "] doesn't have any resource or resource path [" + serviceResourcePath + "] has already been deleted.");
             }
         }
+    }
+
+    private boolean skipStatePersistence(AxisService axisService) {
+
+        Parameter skipParam = axisService.getParameter(SKIP_SERVICE_STATE_PERSISTENCE_PARAM);
+        if (skipParam == null) {
+            return false;
+        }
+        Object value = skipParam.getValue();
+        return (value instanceof String && Boolean.parseBoolean((String) value));
     }
 
     private boolean keepHistory(AxisService axisService) {

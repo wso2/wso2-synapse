@@ -78,7 +78,7 @@ public class InboundEndpointFactory {
         if (inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_SUSPEND) != null) {
             String resolvedSuspend = ResolverFactory.getInstance()
                     .getResolver(inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_SUSPEND)).resolve();
-            inboundEndpoint.setSuspend(Boolean.parseBoolean(resolvedSuspend));
+            inboundEndpoint.setSuspend(resolvedSuspend != null && Boolean.parseBoolean(resolvedSuspend.trim()));
         } else {
             inboundEndpoint.setSuspend(false);
         }
