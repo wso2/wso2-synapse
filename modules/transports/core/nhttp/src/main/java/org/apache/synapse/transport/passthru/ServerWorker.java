@@ -530,6 +530,7 @@ private WorkerState state;
             msgContext = new MessageContext();
         }
         String messageId = null;
+        // The below urn:uuid: code exists to preserve backward compatibility
         if (systemGeneratedCorrelationLog instanceof Boolean && (Boolean) systemGeneratedCorrelationLog) {
             if (correlationId instanceof String && StringUtils.isNotEmpty((String) correlationId)) {
                 messageId = "urn:uuid:" + correlationId;
