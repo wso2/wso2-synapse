@@ -169,6 +169,14 @@ public interface PassThroughConfigPNames {
     public String ACTIVITY_ID_HEADER_VALIDATION_REGEX = "activity_id_header_validation_regex";
 
     /**
+     * Defines the action taken when an incoming activity ID (correlation) header value does not match
+     * {@link #ACTIVITY_ID_HEADER_VALIDATION_REGEX}. Supported values are "regenerate" (default), which replaces the value
+     * with a generated correlation ID, and "reject", which responds with 400 Bad Request and closes the connection.
+     * Ignored when the validation regex is not set.
+     */
+    public String ACTIVITY_ID_HEADER_VALIDATION_ACTION = "activity_id_header_validation_action";
+
+    /**
      * Defines max waiting time for a request to be queued for a worker thread
      */
     public String EXPECTED_MAX_QUEUEING_TIME = "expected_max_queueing_time";

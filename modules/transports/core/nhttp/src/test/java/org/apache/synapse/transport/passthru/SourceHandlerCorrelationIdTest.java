@@ -17,19 +17,27 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.NHttpServerConnection;
+import org.apache.http.params.BasicHttpParams;
 import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpProcessor;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfigPNames;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.util.PassThroughTestUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Constructor;
@@ -37,7 +45,7 @@ import java.lang.reflect.Field;
 import java.util.regex.Pattern;
 
 /**
- * Tests correlation ID resolution in {@link SourceHandler#setCorrelationId(NHttpServerConnection)}.
+ * Tests correlation ID resolution in {@link SourceHandler#resolveCorrelationId(NHttpServerConnection)}.
  */
 public class SourceHandlerCorrelationIdTest {
 
@@ -49,6 +57,7 @@ public class SourceHandlerCorrelationIdTest {
     private final HttpContext httpContext = new BasicHttpContext();
     private HttpRequest request;
     private final NHttpServerConnection conn = Mockito.mock(NHttpServerConnection.class);
+    private final SourceConfiguration sourceConfiguration = Mockito.mock(SourceConfiguration.class);
 
     /**
      * Creating a {@link SourceHandler} initializes the {@link PassThroughConfiguration} singleton, which reads
@@ -68,14 +77,22 @@ public class SourceHandlerCorrelationIdTest {
     @After
     public void tearDown() {
         System.clearProperty(PassThroughConfigPNames.ACTIVITY_ID_HEADER_VALIDATION_REGEX);
+        System.clearProperty(PassThroughConfigPNames.ACTIVITY_ID_HEADER_VALIDATION_ACTION);
     }
 
     private SourceHandler createHandler(String regex) {
+        return createHandler(regex, null);
+    }
+
+    private SourceHandler createHandler(String regex, String action) {
         if (regex != null) {
             System.setProperty(PassThroughConfigPNames.ACTIVITY_ID_HEADER_VALIDATION_REGEX, regex);
         }
+        if (action != null) {
+            System.setProperty(PassThroughConfigPNames.ACTIVITY_ID_HEADER_VALIDATION_ACTION, action);
+        }
         Mockito.when(conn.getContext()).thenReturn(httpContext);
-        return new SourceHandler(Mockito.mock(SourceConfiguration.class));
+        return new SourceHandler(sourceConfiguration);
     }
 
     /**
@@ -174,6 +191,130 @@ public class SourceHandlerCorrelationIdTest {
         SourceHandler handler = createHandler(REGEX);
         assertReplaced(handler, "INJECT<1>", "INJECT<2>");
         assertReplaced(handler, "INJECT<?>", "abc-123");
+    }
+
+    @Test
+    public void testInvalidValueRegeneratedWhenActionExplicitlyRegenerate() {
+        SourceHandler handler = createHandler(REGEX, "regenerate");
+        newRequest("INJECT<?>");
+        Assert.assertTrue(handler.resolveCorrelationId(conn));
+        assertGenerated();
+    }
+
+    @Test
+    public void testUnknownActionDefaultsToRegenerate() {
+        SourceHandler handler = createHandler(REGEX, "foo");
+        newRequest("INJECT<?>");
+        Assert.assertTrue(handler.resolveCorrelationId(conn));
+        assertGenerated();
+    }
+
+    @Test
+    public void testRejectActionIgnoredWhenValidationNotConfigured() {
+        SourceHandler handler = createHandler(null, "reject");
+        newRequest("INJECT<?>");
+        Assert.assertTrue(handler.resolveCorrelationId(conn));
+        Assert.assertEquals("INJECT<?>", correlationId());
+        Assert.assertEquals(Boolean.FALSE, systemGenerated());
+    }
+
+    @Test
+    public void testRejectActionRejectsInvalidValue() {
+        SourceHandler handler = createHandler(REGEX, "REJECT");
+        newRequest("INJECT<?>");
+        Assert.assertFalse(handler.resolveCorrelationId(conn));
+        // A correlation ID is still generated so that the rejection can be correlated in logs.
+        assertGenerated();
+    }
+
+    @Test
+    public void testRejectActionAcceptsValidOrAbsentValue() {
+        SourceHandler handler = createHandler(REGEX, "reject");
+        newRequest("abc-123", "INJECT<?>");
+        Assert.assertTrue(handler.resolveCorrelationId(conn));
+        Assert.assertEquals("abc-123", correlationId());
+        Assert.assertEquals(Boolean.FALSE, systemGenerated());
+        Assert.assertEquals(1, request.getHeaders(HEADER).length);
+
+        newRequest((String[]) null);
+        Assert.assertTrue(handler.resolveCorrelationId(conn));
+        assertGenerated();
+    }
+
+    @Test
+    public void testRequestWithInvalidValueRejected() throws Exception {
+        PassThroughTransportMetricsCollector metrics = Mockito.mock(PassThroughTransportMetricsCollector.class);
+        SourceHandler handler = createRejectingHandler(metrics);
+        newRequest("INJECT<?>");
+
+        handler.requestReceived(conn);
+
+        assertRejected(metrics);
+        Mockito.verify(sourceConfiguration, Mockito.never()).getWorkerPool();
+    }
+
+    /**
+     * Subclasses (e.g. inbound endpoint handlers) call {@link SourceHandler#setCorrelationId(NHttpServerConnection)}
+     * followed by {@link SourceHandler#getSourceRequest(NHttpServerConnection)}, and stop processing the request if
+     * the latter returns null.
+     */
+    @Test
+    public void testRequestWithInvalidValueRejectedWhenSettingCorrelationId() throws Exception {
+        PassThroughTransportMetricsCollector metrics = Mockito.mock(PassThroughTransportMetricsCollector.class);
+        SourceHandler handler = createRejectingHandler(metrics);
+        newRequest("INJECT<?>");
+
+        handler.setCorrelationId(conn);
+
+        assertRejected(metrics);
+        Assert.assertNull(handler.getSourceRequest(conn));
+        // The connection is closed gracefully, so that the response is sent, rather than being shut down.
+        Mockito.verify(sourceConfiguration, Mockito.never()).getSourceConnections();
+        Assert.assertEquals(ProtocolState.CLOSED, SourceContext.getState(conn));
+    }
+
+    @Test
+    public void testApplyCorrelationIdReturnsFalseWhenRejected() throws Exception {
+        PassThroughTransportMetricsCollector metrics = Mockito.mock(PassThroughTransportMetricsCollector.class);
+        SourceHandler handler = createRejectingHandler(metrics);
+        newRequest("abc-123");
+        Assert.assertTrue(handler.applyCorrelationId(conn));
+        Mockito.verify(conn, Mockito.never()).submitResponse(Mockito.any(HttpResponse.class));
+
+        newRequest("INJECT<?>");
+        Assert.assertFalse(handler.applyCorrelationId(conn));
+        assertRejected(metrics);
+    }
+
+    private SourceHandler createRejectingHandler(PassThroughTransportMetricsCollector metrics) {
+        Mockito.when(sourceConfiguration.getMetrics()).thenReturn(metrics);
+        Mockito.when(sourceConfiguration.getHttpParams()).thenReturn(new BasicHttpParams());
+        Mockito.when(sourceConfiguration.getHttpProcessor()).thenReturn(Mockito.mock(HttpProcessor.class));
+        SourceHandler handler = createHandler(REGEX, "reject");
+        SourceContext.create(conn, ProtocolState.REQUEST_READY, sourceConfiguration);
+        return handler;
+    }
+
+    private void assertRejected(PassThroughTransportMetricsCollector metrics) throws Exception {
+        ArgumentCaptor<HttpResponse> response = ArgumentCaptor.forClass(HttpResponse.class);
+        // Input must be suspended before the response is submitted, so that the request body is not passed to
+        // inputReady, which would shut down the connection before the response is sent.
+        InOrder inOrder = Mockito.inOrder(conn);
+        inOrder.verify(conn).suspendInput();
+        inOrder.verify(conn).submitResponse(response.capture());
+        inOrder.verify(conn).close();
+        Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getValue().getStatusLine().getStatusCode());
+        Assert.assertEquals("Bad Request", response.getValue().getStatusLine().getReasonPhrase());
+        Assert.assertEquals(HTTP.CONN_CLOSE, response.getValue().getFirstHeader(HTTP.CONN_DIRECTIVE).getValue());
+        Assert.assertEquals(ProtocolState.CLOSED, SourceContext.getState(conn));
+        Mockito.verify(metrics).incrementFaultsReceiving();
+    }
+
+    private void assertGenerated() {
+        Assert.assertTrue(UUID_PATTERN.matcher((String) correlationId()).matches());
+        Assert.assertEquals(Boolean.TRUE, systemGenerated());
+        Assert.assertEquals(1, request.getHeaders(HEADER).length);
+        Assert.assertEquals(correlationId(), request.getFirstHeader(HEADER).getValue());
     }
 
     private void assertReplaced(SourceHandler handler, String... activityIds) {

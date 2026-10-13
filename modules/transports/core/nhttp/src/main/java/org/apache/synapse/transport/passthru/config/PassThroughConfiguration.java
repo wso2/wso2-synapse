@@ -55,6 +55,8 @@ public class PassThroughConfiguration {
     private static final int DEFAULT_CONNECTION_GRACE_TIME = 10000;
 
     private static final String EXPECTED_MAX_QUEUEING_TIME_DEFAULT = "1000";
+    private static final String ACTIVITY_ID_HEADER_VALIDATION_ACTION_REGENERATE = "regenerate";
+    private static final String ACTIVITY_ID_HEADER_VALIDATION_ACTION_REJECT = "reject";
     private Boolean isKeepAliveDisabled = null;
 
     private Boolean isConsumeAndDiscard = true;
@@ -289,6 +291,28 @@ public class PassThroughConfiguration {
                     + ". Activity ID header validation is disabled. " + e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Returns whether requests with an activity ID header value that does not match the configured validation regex
+     * should be rejected. Defaults to false, in which case a new correlation ID is generated for such requests.
+     *
+     * @return true if the configured activity ID header validation action is "reject"
+     */
+    public boolean isActivityIdHeaderRejectEnabled() {
+        String action = getStringProperty(PassThroughConfigPNames.ACTIVITY_ID_HEADER_VALIDATION_ACTION, null);
+        if (action == null || action.trim().isEmpty()
+                || ACTIVITY_ID_HEADER_VALIDATION_ACTION_REGENERATE.equalsIgnoreCase(action.trim())) {
+            return false;
+        }
+        if (ACTIVITY_ID_HEADER_VALIDATION_ACTION_REJECT.equalsIgnoreCase(action.trim())) {
+            return true;
+        }
+        log.warn("Invalid value '" + action + "' configured for "
+                + PassThroughConfigPNames.ACTIVITY_ID_HEADER_VALIDATION_ACTION + ". Supported values are "
+                + ACTIVITY_ID_HEADER_VALIDATION_ACTION_REGENERATE + " and " + ACTIVITY_ID_HEADER_VALIDATION_ACTION_REJECT
+                + ". Defaulting to " + ACTIVITY_ID_HEADER_VALIDATION_ACTION_REGENERATE + ".");
+        return false;
     }
 
     public String getExpectedMaxQueueingTime() {

@@ -100,6 +100,8 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     private final Pattern correlationHeaderValidationPattern;
 
+    private final boolean rejectInvalidCorrelationHeader;
+
     public static final String PROPERTY_FILE = "passthru-http.properties";
     public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
     public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
@@ -110,6 +112,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     private static final String SSE_TARGET_CONNECTION = "SSE_TARGET_CONNECTION";
     private static final String SSE_TARGET_CONNECTIONS = "SSE_TARGET_CONNECTIONS";
+    private static final String INVALID_CORRELATION_HEADER_REJECTED = "INVALID_CORRELATION_HEADER_REJECTED";
 
     public SourceHandler(SourceConfiguration sourceConfiguration) {
         this(sourceConfiguration, new ArrayList<StreamInterceptor>());
@@ -122,6 +125,9 @@ public class SourceHandler implements NHttpServerEventHandler {
         this.interceptStream = !streamInterceptors.isEmpty();
         this.noOfInterceptors = streamInterceptors.size();
         this.correlationHeaderValidationPattern = conf.getCorrelationHeaderValidationPattern();
+        // The validation action is only applicable when a validation pattern is configured.
+        this.rejectInvalidCorrelationHeader = correlationHeaderValidationPattern != null
+                && conf.isActivityIdHeaderRejectEnabled();
 
         String strNamePostfix = "";
         if (sourceConfiguration.getInDescription() != null &&
@@ -168,7 +174,9 @@ public class SourceHandler implements NHttpServerEventHandler {
                 requestArrivalTimestamp = System.currentTimeMillis();
             }
             HttpContext httpContext = conn.getContext();
-            setCorrelationId(conn);
+            if (!applyCorrelationId(conn)) {
+                return;
+            }
             if (PassThroughCorrelationConfigDataHolder.isEnable()) {
                 SourceContext sourceContext = (SourceContext)
                         conn.getContext().getAttribute(TargetContext.CONNECTION_INFORMATION);
@@ -238,20 +246,56 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
+    /**
+     * Sets the correlation ID of the incoming request. If the incoming correlation header value is invalid and such
+     * requests are configured to be rejected, the request is rejected, after which
+     * {@link #getSourceRequest(NHttpServerConnection)} returns null.
+     *
+     * @param conn the client connection
+     * @see #applyCorrelationId(NHttpServerConnection)
+     */
     public void setCorrelationId(NHttpServerConnection conn) {
+        applyCorrelationId(conn);
+    }
+
+    /**
+     * Sets the correlation ID of the incoming request, and rejects the request if the incoming correlation header
+     * value is invalid and such requests are configured to be rejected.
+     *
+     * @param conn the client connection
+     * @return false if the request was rejected, in which case it must not be processed further, true otherwise
+     */
+    public boolean applyCorrelationId(NHttpServerConnection conn) {
+        if (resolveCorrelationId(conn)) {
+            return true;
+        }
+        rejectInvalidCorrelationHeader(conn);
+        return false;
+    }
+
+    /**
+     * Resolves the correlation ID of the incoming request and sets it in the http context and the request headers.
+     *
+     * @param conn the client connection
+     * @return false if the incoming correlation header value is invalid and such requests should be rejected,
+     * true otherwise
+     */
+    boolean resolveCorrelationId(NHttpServerConnection conn) {
         HttpContext httpContext = conn.getContext();
         String correlationHeaderName = PassThroughConfiguration.getInstance().getCorrelationHeaderName();
         Header[] correlationHeader = conn.getHttpRequest().getHeaders(correlationHeaderName);
         String correlationId = null;
+        boolean valid = true;
         if (correlationHeader.length != 0) {
             correlationId = correlationHeader[0].getValue();
             if (correlationHeaderValidationPattern != null && (correlationId == null
                     || !correlationHeaderValidationPattern.matcher(correlationId).matches())) {
-                if (log.isDebugEnabled()) {
+                if (!rejectInvalidCorrelationHeader && log.isDebugEnabled()) {
                     log.debug("Incoming " + correlationHeaderName + " header value does not match the configured "
                             + "validation pattern. A new correlation ID will be generated.");
                 }
                 correlationId = null;
+                valid = false;
             }
         }
         boolean systemGenerated = correlationId == null;
@@ -268,6 +312,29 @@ public class SourceHandler implements NHttpServerEventHandler {
         // avoid retaining the value set by a previous request.
         httpContext.setAttribute(CorrelationConstants.SYSTEM_GENERATED_CORRELATION_ID, systemGenerated);
         httpContext.setAttribute(CorrelationConstants.CORRELATION_ID, correlationId);
+        return valid || !rejectInvalidCorrelationHeader;
+    }
+
+    /**
+     * Rejects a request with an invalid correlation header value by responding with 400 Bad Request and closing the
+     * connection.
+     *
+     * @param conn the client connection
+     */
+    private void rejectInvalidCorrelationHeader(NHttpServerConnection conn) {
+        if (PassThroughCorrelationConfigDataHolder.isEnable()) {
+            // Set the arrival time of this request, as the context may hold the one of a previous keep-alive request.
+            conn.getContext().setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
+            logHttpRequestErrorInCorrelationLog(conn, "Invalid activity ID header");
+        }
+        log.warn("Rejecting the request as the " + PassThroughConfiguration.getInstance().getCorrelationHeaderName()
+                + " header value does not match the configured validation pattern.");
+        metrics.incrementFaultsReceiving();
+        conn.getContext().setAttribute(INVALID_CORRELATION_HEADER_REJECTED, true);
+        // Stop reading the request, as otherwise the request body would be passed to inputReady, which treats it as
+        // received in an invalid state and shuts down the connection before the response is sent.
+        conn.suspendInput();
+        sendErrorResponseAndClose(conn, HttpStatus.SC_BAD_REQUEST, "Bad Request");
     }
 
     public void inputReady(NHttpServerConnection conn,
@@ -424,11 +491,21 @@ public class SourceHandler implements NHttpServerEventHandler {
      * @param conn HTTP server connection reference
      */
     private void dropSourceConnection(NHttpServerConnection conn) {
+        sendErrorResponseAndClose(conn, HttpStatus.SC_REQUEST_TOO_LONG, "Payload Too Large");
+    }
+
+    /**
+     * Sends an error response and closes the source side HTTP connection.
+     *
+     * @param conn       HTTP server connection reference
+     * @param statusCode HTTP status code of the response
+     * @param reason     reason phrase of the response
+     */
+    private void sendErrorResponseAndClose(NHttpServerConnection conn, int statusCode, String reason) {
         try {
             HttpContext httpContext = conn.getContext();
 
-            HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1, HttpStatus.SC_REQUEST_TOO_LONG,
-                    "Payload Too Large");
+            HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1, statusCode, reason);
             response.setParams(new DefaultedHttpParams(sourceConfiguration.getHttpParams(), response.getParams()));
             response.addHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
 
@@ -1141,6 +1218,10 @@ public class SourceHandler implements NHttpServerEventHandler {
      */
     public SourceRequest getSourceRequest(NHttpServerConnection conn) throws IOException, HttpException {
         HttpContext context = conn.getContext();
+        if (Boolean.TRUE.equals(context.getAttribute(INVALID_CORRELATION_HEADER_REJECTED))) {
+            // The request has already been rejected and the connection is being closed.
+            return null;
+        }
         context.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
 
         if (!SourceContext.assertState(conn, ProtocolState.REQUEST_READY) && !SourceContext.assertState(conn, ProtocolState.WSDL_RESPONSE_DONE)) {
