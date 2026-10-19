@@ -304,6 +304,11 @@ class TestingAgent {
                 testSummary.setTestCaseName(currentTestCaseName);
                 testSuiteSummary.setRecentTestCaseName(currentTestCaseName);
 
+                if (!TYPE_SEQUENCE.equals(mainTestArtifactType) && !currentTestCase.getVariableMap().isEmpty()) {
+                    log.warn("Input variables are supported only for sequence test cases. Ignoring variables " +
+                            "defined in the test case - " + currentTestCaseName);
+                }
+
                 switch (mainTestArtifactType) {
                     case TYPE_SEQUENCE:
                         Map.Entry<Boolean, MessageContext> mediateResult =

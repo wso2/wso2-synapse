@@ -55,6 +55,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.unittest.testcase.data.classes.TestCase;
 import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 
@@ -89,6 +90,9 @@ import static org.apache.synapse.unittest.Constants.STRING_UTF8;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_NAME;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_SCOPE;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_VALUE;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_VARIABLE_NAME;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_VARIABLE_TYPE;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_VARIABLE_VALUE;
 import static org.apache.synapse.unittest.Constants.TEXT_FORMAT;
 import static org.apache.synapse.unittest.Constants.TEXT_NAMESPACE;
 import static org.apache.synapse.unittest.Constants.XML_FORMAT;
@@ -108,7 +112,7 @@ public class TestCasesMediator {
 
     /**
      * Sequence mediation of receiving test cases using deployed sequence deployer.
-     * set input properties for the Message Context
+     * set input properties and variables for the Message Context
      *
      * @param currentTestCase current test case
      * @param synConfig       synapse configuration used to deploy sequenceDeployer
@@ -126,8 +130,9 @@ public class TestCasesMediator {
             // Set artifact key for coverage tracking
             msgCtxt.setProperty(Constants.COVERAGE_ARTIFACT_KEY, "Sequence:" + key);
             
-            mediationResult = sequenceMediator
-                    .mediate(setInputMessageProperties(msgCtxt, currentTestCase.getPropertyMap()));
+            setInputMessageProperties(msgCtxt, currentTestCase.getPropertyMap());
+            setInputMessageVariables(msgCtxt, currentTestCase.getVariableMap());
+            mediationResult = sequenceMediator.mediate(msgCtxt);
         }
 
         return new AbstractMap.SimpleEntry<>(mediationResult, msgCtxt);
@@ -456,6 +461,28 @@ public class TestCasesMediator {
         }
 
         return messageContext;
+    }
+
+    /**
+     * Set input variable values in MessageContext.
+     * Values are converted to the given type the same way the Variable mediator does.
+     *
+     * @param messageContext message context
+     * @param variables      input variable values
+     */
+    private static void setInputMessageVariables(MessageContext messageContext,
+                                                 List<Map<String, String>> variables) {
+
+        for (Map<String, String> variable : variables) {
+            String name = variable.get(TEST_CASE_INPUT_VARIABLE_NAME);
+            try {
+                Object value = Utils.convertValue(variable.get(TEST_CASE_INPUT_VARIABLE_VALUE),
+                        variable.get(TEST_CASE_INPUT_VARIABLE_TYPE), log);
+                messageContext.setVariable(name, value);
+            } catch (Exception e) {
+                log.error("Error while setting variable '" + name + "' to the Message Context", e);
+            }
+        }
     }
 
     /**

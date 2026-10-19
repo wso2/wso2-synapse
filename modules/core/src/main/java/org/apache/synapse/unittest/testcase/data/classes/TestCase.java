@@ -29,6 +29,7 @@ public class TestCase {
     private String protocolType;
     private String inputPayload;
     private List<Map<String, String>> propertyMap = new ArrayList<>();
+    private List<Map<String, String>> variableMap = new ArrayList<>();
     private List<AssertEqual> assertEquals = new ArrayList<>();
     private List<AssertNotNull> assertNotNull = new ArrayList<>();
 
@@ -57,6 +58,15 @@ public class TestCase {
      */
     public List<Map<String, String>> getPropertyMap() {
         return propertyMap;
+    }
+
+    /**
+     * Get input variable values of particular test case.
+     *
+     * @return input variable values of requested test case
+     */
+    public List<Map<String, String>> getVariableMap() {
+        return variableMap;
     }
 
     /**
@@ -129,6 +139,15 @@ public class TestCase {
      */
     public void setPropertyMap(List<Map<String, String>> propertyMap) {
         this.propertyMap = propertyMap;
+    }
+
+    /**
+     * Add input variable values into a ArrayList.
+     *
+     * @param variableMap input variable values of a particular test case
+     */
+    public void setVariableMap(List<Map<String, String>> variableMap) {
+        this.variableMap = variableMap;
     }
 
     /**

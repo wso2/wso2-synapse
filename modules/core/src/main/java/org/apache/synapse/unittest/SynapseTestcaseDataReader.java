@@ -101,6 +101,10 @@ import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTIES;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_NAME;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_SCOPE;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_PROPERTY_VALUE;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_VARIABLES;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_VARIABLE_NAME;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_VARIABLE_TYPE;
+import static org.apache.synapse.unittest.Constants.TEST_CASE_INPUT_VARIABLE_VALUE;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_PROTOCOL_TYPE;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_METHOD;
 import static org.apache.synapse.unittest.Constants.TEST_CASE_REQUEST_PATH;
@@ -359,7 +363,7 @@ class SynapseTestcaseDataReader {
 
     /**
      * Read test case input data from the descriptor data.
-     * Read payload and properties if exists
+     * Read payload, properties and variables if exists
      *
      * @param testCaseInputNode node of test cases
      * @param testCase          test case object
@@ -424,6 +428,37 @@ class SynapseTestcaseDataReader {
             }
 
             testCase.setPropertyMap(properties);
+        }
+
+        QName qualifiedInputVariables = new QName("", TEST_CASE_INPUT_VARIABLES, "");
+        OMElement testCaseInputVariableNode = testCaseInputNode.getFirstChildWithName(qualifiedInputVariables);
+
+        if (testCaseInputVariableNode != null) {
+            Iterator<?> variableIterator = testCaseInputVariableNode.getChildElements();
+
+            ArrayList<Map<String, String>> variables = new ArrayList<>();
+            while (variableIterator.hasNext()) {
+                OMElement variableNode = (OMElement) (variableIterator.next());
+
+                String varName = variableNode.getAttributeValue(new QName(TEST_CASE_INPUT_VARIABLE_NAME));
+                String varValue = variableNode.getAttributeValue(new QName(TEST_CASE_INPUT_VARIABLE_VALUE));
+                String varType = variableNode.getAttributeValue(new QName(TEST_CASE_INPUT_VARIABLE_TYPE));
+
+                //same validation as the variable mediator
+                if (varName == null || varName.isEmpty() || varValue == null) {
+                    log.error("The 'name' and 'value' attributes are required for an input variable. "
+                            + "Skipping the variable in the test case - " + testCase.getTestCaseName());
+                    continue;
+                }
+
+                Map<String, String> variableMap = new HashMap<>();
+                variableMap.put(TEST_CASE_INPUT_VARIABLE_NAME, varName);
+                variableMap.put(TEST_CASE_INPUT_VARIABLE_VALUE, varValue);
+                variableMap.put(TEST_CASE_INPUT_VARIABLE_TYPE, varType);
+                variables.add(variableMap);
+            }
+
+            testCase.setVariableMap(variables);
         }
     }
 
