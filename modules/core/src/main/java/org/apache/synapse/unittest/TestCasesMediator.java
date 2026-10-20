@@ -62,6 +62,7 @@ import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -464,24 +465,49 @@ public class TestCasesMediator {
     }
 
     /**
+     * Validate input variable values of a test case.
+     * Values are converted to the given type the same way the Variable mediator does.
+     *
+     * @param variables input variable values
+     * @return validation error message, or null if all the variables are valid
+     */
+    static String validateInputVariables(List<Map<String, String>> variables) {
+
+        List<String> errors = new ArrayList<>();
+        for (Map<String, String> variable : variables) {
+            String name = variable.get(TEST_CASE_INPUT_VARIABLE_NAME);
+            String value = variable.get(TEST_CASE_INPUT_VARIABLE_VALUE);
+
+            //'name' and 'value' are required, as in the variable mediator
+            if (name == null || name.isEmpty() || value == null) {
+                errors.add("'name' and 'value' attributes are required for an input variable.");
+                continue;
+            }
+            try {
+                if (Utils.convertValue(value, variable.get(TEST_CASE_INPUT_VARIABLE_TYPE), log) == null) {
+                    errors.add("'" + name + "': value cannot be converted into the specified type.");
+                }
+            } catch (Exception e) {
+                errors.add("'" + name + "': " + e.getMessage());
+            }
+        }
+        return errors.isEmpty() ? null : String.join(" ", errors);
+    }
+
+    /**
      * Set input variable values in MessageContext.
      * Values are converted to the given type the same way the Variable mediator does.
      *
      * @param messageContext message context
-     * @param variables      input variable values
+     * @param variables      validated input variable values
      */
     private static void setInputMessageVariables(MessageContext messageContext,
                                                  List<Map<String, String>> variables) {
 
         for (Map<String, String> variable : variables) {
-            String name = variable.get(TEST_CASE_INPUT_VARIABLE_NAME);
-            try {
-                Object value = Utils.convertValue(variable.get(TEST_CASE_INPUT_VARIABLE_VALUE),
-                        variable.get(TEST_CASE_INPUT_VARIABLE_TYPE), log);
-                messageContext.setVariable(name, value);
-            } catch (Exception e) {
-                log.error("Error while setting variable '" + name + "' to the Message Context", e);
-            }
+            messageContext.setVariable(variable.get(TEST_CASE_INPUT_VARIABLE_NAME),
+                    Utils.convertValue(variable.get(TEST_CASE_INPUT_VARIABLE_VALUE),
+                            variable.get(TEST_CASE_INPUT_VARIABLE_TYPE), log));
         }
     }
 

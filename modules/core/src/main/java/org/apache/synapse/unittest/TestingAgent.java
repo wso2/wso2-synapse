@@ -311,6 +311,17 @@ class TestingAgent {
 
                 switch (mainTestArtifactType) {
                     case TYPE_SEQUENCE:
+                        String inputVariableError =
+                                TestCasesMediator.validateInputVariables(currentTestCase.getVariableMap());
+                        if (inputVariableError != null) {
+                            String errorMessage = "Invalid input variables - " + inputVariableError;
+                            log.error("Skipping the test case - " + currentTestCaseName + ". " + errorMessage);
+                            testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
+                            testSummary.setMediationStatus(Constants.FAILED_KEY);
+                            testSummary.setTestException(errorMessage);
+                            break;
+                        }
+
                         Map.Entry<Boolean, MessageContext> mediateResult =
                                 TestCasesMediator.sequenceMediate(currentTestCase, synapseConfiguration, key);
 

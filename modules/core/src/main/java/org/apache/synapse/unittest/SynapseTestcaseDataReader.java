@@ -444,13 +444,6 @@ class SynapseTestcaseDataReader {
                 String varValue = variableNode.getAttributeValue(new QName(TEST_CASE_INPUT_VARIABLE_VALUE));
                 String varType = variableNode.getAttributeValue(new QName(TEST_CASE_INPUT_VARIABLE_TYPE));
 
-                //same validation as the variable mediator
-                if (varName == null || varName.isEmpty() || varValue == null) {
-                    log.error("The 'name' and 'value' attributes are required for an input variable. "
-                            + "Skipping the variable in the test case - " + testCase.getTestCaseName());
-                    continue;
-                }
-
                 Map<String, String> variableMap = new HashMap<>();
                 variableMap.put(TEST_CASE_INPUT_VARIABLE_NAME, varName);
                 variableMap.put(TEST_CASE_INPUT_VARIABLE_VALUE, varValue);

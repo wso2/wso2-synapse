@@ -142,7 +142,7 @@ public class TestCase {
     }
 
     /**
-     * Add input variable values into a ArrayList.
+     * Set input variable values of the test case.
      *
      * @param variableMap input variable values of a particular test case
      */
