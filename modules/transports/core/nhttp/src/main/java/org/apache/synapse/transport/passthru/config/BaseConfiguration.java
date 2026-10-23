@@ -68,6 +68,8 @@ public abstract class BaseConfiguration {
     protected boolean preserveServerHeader = true;
     /** Http headers which should be preserved */
     protected List<String> preserveHttpHeaders;
+    /** Whether an existing response Content-Type header should be removed ignoring letter case */
+    protected boolean duplicateResponseContentTypeHeaderRemovalEnabled = true;
 
 
     private PassThroughTransportMetricsCollector metrics = null;
@@ -269,5 +271,17 @@ public abstract class BaseConfiguration {
         if (preserveUserAgentHeader && !preserveHttpHeaders.contains(HTTP.USER_AGENT.toUpperCase())) {
             preserveHttpHeaders.add(HTTP.USER_AGENT.toUpperCase());
         }
+    }
+
+    /**
+     * Check whether an existing response Content-Type header should be removed ignoring its letter case before the
+     * transport sets its own value. Used to avoid sending duplicate Content-Type headers to the client when the
+     * backend has returned the header in a casing different to the one used by the transport (e.g. "content-type"
+     * against "Content-Type"). Enabled by default.
+     *
+     * @return duplicate response Content-Type header removal status
+     */
+    public boolean isDuplicateResponseContentTypeHeaderRemovalEnabled() {
+        return duplicateResponseContentTypeHeaderRemovalEnabled;
     }
 }
