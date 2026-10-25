@@ -358,6 +358,17 @@ public class SourceResponse {
         }
     }
 
+    /**
+     * Removes every header whose name matches the given name ignoring its letter case. Used to avoid sending
+     * duplicate headers to the client when the backend has returned a header in a casing different to the one used
+     * by the transport (e.g. "content-type" against "Content-Type").
+     *
+     * @param name name of the header to be removed
+     */
+    public void removeHeaderIgnoreCase(String name) {
+        headers.keySet().removeIf(header -> header.equalsIgnoreCase(name));
+    }
+
     public String getHeader(String name) {
         if (headers.containsKey(name)){
             return headers.get(name).first();
