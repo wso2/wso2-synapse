@@ -87,6 +87,25 @@ public class ThreadingView implements ThreadingViewMBean {
 
     private Queue<Double> runnableShortTermQueue = new LinkedList<Double>();
 
+    private static final Map<String, ThreadingView> viewCache = new java.util.concurrent.ConcurrentHashMap<String, ThreadingView>();
+    private static final Map<String, java.util.concurrent.atomic.AtomicInteger> viewRefCount = new java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>();
+
+    public static synchronized ThreadingView getInstance(final String threadNamePrefix, boolean periodicLogs, double alertMargin) {
+        ThreadingView view = viewCache.get(threadNamePrefix);
+        if (view == null) {
+            view = new ThreadingView(threadNamePrefix, periodicLogs, alertMargin);
+            viewCache.put(threadNamePrefix, view);
+            viewRefCount.put(threadNamePrefix, new java.util.concurrent.atomic.AtomicInteger(1));
+        } else {
+            viewRefCount.get(threadNamePrefix).incrementAndGet();
+        }
+        return view;
+    }
+
+    public static synchronized ThreadingView getInstance(final String threadNamePrefix) {
+        return getInstance(threadNamePrefix, false, -1);
+    }
+
     public ThreadingView(final String threadNamePrefix) {
         this.threadNamePrefix = threadNamePrefix;
         this.scheduler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -136,9 +155,16 @@ public class ThreadingView implements ThreadingViewMBean {
             log.debug("Un-registering the Synapse threading view for the thread group: " +
                     threadNamePrefix);
         }
-        MBeanRegistrar.getInstance().unRegisterMBean(SYNAPSE_THREADING_VIEW, threadNamePrefix);
-        if (!scheduler.isShutdown()) {
-            scheduler.shutdownNow();
+        java.util.concurrent.atomic.AtomicInteger count = viewRefCount.get(threadNamePrefix);
+        if (count == null || count.decrementAndGet() <= 0) {
+            MBeanRegistrar.getInstance().unRegisterMBean(SYNAPSE_THREADING_VIEW, threadNamePrefix);
+            if (!scheduler.isShutdown()) {
+                scheduler.shutdownNow();
+            }
+            viewCache.remove(threadNamePrefix);
+            if (count != null) {
+                viewRefCount.remove(threadNamePrefix);
+            }
         }
     }
 

@@ -156,7 +156,7 @@ public class ServerHandler implements NHttpServerEventHandler {
         boolean enableAdvancedForS2SView = cfg.getBooleanValue("synapse.nhttp.s2slatency_view.enable_advanced_view", false);
         this.latencyView = new LatencyView("NHTTPLatencyView", scheme.isSSL(), strNamePostfix, enableAdvancedForLatencyView);
         this.s2sLatencyView = new LatencyView("NHTTPS2SLatencyView", scheme.isSSL(), strNamePostfix, enableAdvancedForS2SView);
-        this.threadingView = new ThreadingView("HttpServerWorker", true, 50);
+        this.threadingView = ThreadingView.getInstance("HttpServerWorker", true, 50);
 
         if (listenerContext.getExecutor() == null)  {
             this.workerPool = WorkerPoolFactory.getWorkerPool(
