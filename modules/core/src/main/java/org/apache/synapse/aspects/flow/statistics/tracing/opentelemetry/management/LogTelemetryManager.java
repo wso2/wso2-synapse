@@ -30,8 +30,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandler;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScopeManager;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandlerFactory;
 
 public class LogTelemetryManager implements OpenTelemetryManager {
 
@@ -39,7 +38,7 @@ public class LogTelemetryManager implements OpenTelemetryManager {
     private SdkTracerProvider sdkTracerProvider;
     private OpenTelemetry openTelemetry;
     private TelemetryTracer tracer;
-    private SpanHandler handler;
+    private OpenTelemetrySpanHandler handler;
 
     @Override
     public void init() {
@@ -63,7 +62,7 @@ public class LogTelemetryManager implements OpenTelemetryManager {
         if (logger.isDebugEnabled()) {
             logger.debug("Tracer: " + this.tracer + " is configured");
         }
-        this.handler = new SpanHandler(tracer, openTelemetry, new TracingScopeManager());
+        this.handler = SpanHandlerFactory.createSpanHandler(tracer, openTelemetry);
     }
 
     @Override

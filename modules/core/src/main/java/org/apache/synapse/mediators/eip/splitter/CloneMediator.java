@@ -34,7 +34,6 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -137,10 +136,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1,
                         getMediatorPosition());
                 Target target = iter.next();
-                if (target.isAsynchronous()) {
-                    // Only increase branch count if flow is Asynchronous so new MediatorWorker is used
-                    TelemetryUtil.incrementBranchCount(synCtx);
-                }
+                // An async target with a sequence runs in a MediatorWorker, which counts itself as a branch
                 target.mediate(clonedMsgCtx);
                 boolean isFailure = "true".equalsIgnoreCase((String)clonedMsgCtx.
                         getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION));
@@ -180,10 +176,6 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             synCtx.setProperty(ITERATION_INDEX_PROPERTY_NAME, i + 1);
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i, noOfIterations);
             ContinuationStackManager.addReliantContinuationState(clonedMsgCtx, i - 1, getMediatorPosition());
-            if (target.isAsynchronous()) {
-                // Only increase branch count if flow is Asynchronous so new MediatorWorker is used
-                TelemetryUtil.incrementBranchCount(synCtx);
-            }
             target.mediate(clonedMsgCtx);
             boolean isFailure = "true".equalsIgnoreCase((String)clonedMsgCtx.
                     getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION));

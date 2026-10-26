@@ -110,8 +110,8 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
 			if (TelemetryUtil.isOuterLayerComponent(componentType)) {
-				// This means closing main branch of message flow, we should decrement branch count
-				TelemetryUtil.decrementBranchCount(messageContext);
+				// Closing an outer level component closes the main branch of the flow (at most once per flow)
+				TelemetryUtil.closeMainBranch(messageContext);
 			}
 			if (currentIndex == null) {
 				addEvent(messageContext, closeEvent);

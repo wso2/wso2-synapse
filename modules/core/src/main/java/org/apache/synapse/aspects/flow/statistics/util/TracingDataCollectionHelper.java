@@ -26,6 +26,7 @@ import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayload;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayloadEvent;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
@@ -85,6 +86,7 @@ public class TracingDataCollectionHelper {
 		// Remove message-flow-tracer properties
 		propertyMap.remove(SynapseConstants.STATISTICS_STACK);
 		propertyMap.remove(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+		propertyMap.remove(TelemetryConstants.TRACING_SCOPE_PROPERTY);
 
 		return propertyMap;
 	}
