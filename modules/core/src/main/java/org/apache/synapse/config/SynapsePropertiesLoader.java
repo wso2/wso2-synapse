@@ -80,9 +80,16 @@ public class SynapsePropertiesLoader {
         if (log.isDebugEnabled()) {
             log.debug("Reloading synapse properties");
         }
-        reload = true;
-        cacheProperties.clear();
-        return loadSynapseProperties();
+        // Update the cache in place instead of clearing and reloading it, so that concurrent readers
+        // (e.g. tenants loading in parallel) never see an empty cache
+        Properties fileProperties = MiscellaneousUtil.loadProperties(SynapseConstants.SYNAPSE_PROPERTIES);
+        cacheProperties.keySet().retainAll(fileProperties.keySet());
+        cacheProperties.putAll(fileProperties);
+        reload = false;
+
+        Properties tempProperties = new Properties();
+        tempProperties.putAll(cacheProperties);
+        return tempProperties;
     }
 
     /**
