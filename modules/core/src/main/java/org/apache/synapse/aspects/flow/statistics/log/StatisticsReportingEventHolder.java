@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class is to hold events and stat count information before starting processing events.
@@ -44,6 +45,8 @@ public class StatisticsReportingEventHolder {
      * Denotes whether to publish data for Mediation Flow Statistics or not.
      */
     private boolean publishMediationFlowStatistics;
+
+    private final AtomicBoolean enqueued = new AtomicBoolean();
 
     public StatisticsReportingEventHolder() {
         eventQueue = new ConcurrentLinkedQueue<StatisticsReportingEvent>();
@@ -92,5 +95,14 @@ public class StatisticsReportingEventHolder {
 
     public boolean isPublishMediationFlowStatistics() {
         return publishMediationFlowStatistics;
+    }
+
+    /**
+     * Marks the holder as enqueued for publishing.
+     *
+     * @return true only for the first call
+     */
+    public boolean markEnqueued() {
+        return enqueued.compareAndSet(false, true);
     }
 }

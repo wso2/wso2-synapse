@@ -29,6 +29,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
@@ -102,6 +104,14 @@ public class TelemetryUtil {
 
     }
 
+    /**
+     * Decrements the branch count of the flow of synCtx.
+     *
+     * @param synCtx Message context of the flow.
+     * @deprecated Branch units are owned by MediatorWorker and the main branch is closed with
+     *             {@link #closeMainBranch(MessageContext)}; calling this unbalances the count. Not called by Synapse.
+     */
+    @Deprecated
     public static void decrementBranchCount(MessageContext synCtx) {
         if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
             StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
@@ -112,12 +122,75 @@ public class TelemetryUtil {
     }
 
 
+    /**
+     * Increments the branch count of the flow of synCtx.
+     *
+     * @param synCtx Message context of the flow.
+     * @deprecated Branch units are owned by MediatorWorker and the main branch is closed with
+     *             {@link #closeMainBranch(MessageContext)}; calling this unbalances the count. Not called by Synapse.
+     */
+    @Deprecated
     public static void incrementBranchCount(MessageContext synCtx) {
         if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
             StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
             if (eventHolder != null) {
                 eventHolder.countHolder.incrementBranchCount();
             }
+        }
+    }
+
+    /**
+     * Adds a branch unit for a MediatorWorker of the flow of synCtx.
+     *
+     * @param synCtx Message context the worker mediates.
+     * @return the holder incremented, or null if the flow's statistics are not collected or it has no event holder yet
+     *         (the worker then owns no unit)
+     */
+    public static StatisticsReportingEventHolder startBranch(MessageContext synCtx) {
+        if (synCtx == null || !RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+            return null;
+        }
+        Object holder = synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+        if (!(holder instanceof StatisticsReportingEventHolder)) {
+            return null;
+        }
+        ((StatisticsReportingEventHolder) holder).countHolder.incrementBranchCount();
+        return (StatisticsReportingEventHolder) holder;
+    }
+
+    /**
+     * Closes the main branch of the flow of synCtx (at most once per flow).
+     *
+     * @param synCtx Message context of the flow.
+     */
+    public static void closeMainBranch(MessageContext synCtx) {
+        if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+            Object holder = synCtx.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+            if (holder instanceof StatisticsReportingEventHolder) {
+                ((StatisticsReportingEventHolder) holder).countHolder.closeMainBranch();
+            }
+        }
+    }
+
+    /**
+     * Ends a MediatorWorker of the flow of synCtx: runs branchEnd (release of the branch unit and the worker's statistics
+     * close events) through the span handler, which may hold a lock around it, or directly when tracing is off.
+     *
+     * @param synCtx    Message context the worker mediated.
+     * @param branchEnd End sequence of the worker.
+     */
+    public static void endBranch(MessageContext synCtx, Runnable branchEnd) {
+        OpenTelemetrySpanHandler handler = null;
+        if (synCtx != null && RuntimeStatisticCollector.isOpenTelemetryEnabled()) {
+            OpenTelemetryManager manager = OpenTelemetryManagerHolder.getOpenTelemetryManager();
+            if (manager != null) {
+                handler = manager.getHandler();
+            }
+        }
+        if (handler == null) {
+            branchEnd.run();
+        } else {
+            handler.handleBranchEnd(synCtx, branchEnd);
         }
     }
 

@@ -80,9 +80,15 @@ public class EnqueueMediator extends AbstractMediator {
                 // execute with the given priority
                 executor.execute(worker, priority);
             } catch (RejectedExecutionException ex) {
+                worker.releaseBranch();
                 //if RejectedExecutionException, jump to fault handler
                 handleException("Unable to process message in priority executor " + executorName + " with priority " +
                         priority +". Thread pool exhausted.", synCtx);
+            } catch (RuntimeException | Error e) {
+                // e.g. IllegalStateException (executor not initialised) or IllegalArgumentException (no queue for the
+                // priority)
+                worker.releaseBranch();
+                throw e;
             }
 
 

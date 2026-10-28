@@ -139,4 +139,19 @@ public class TelemetryConstants {
     public static final String OLTP_CUSTOM_SPAN_TAGS = "oltp.custom.span.header.tags";
 
     public static final String OLTP_FILTERED_MEDIATOR_NAMES = "oltp.filtered.mediator.names";
+
+    /**
+     * Selects the span handler implementation. {@link #SPAN_HANDLER_LEGACY} (default) keeps the tracing scopes of all
+     * in-flight message flows in one map held by the handler. {@link #SPAN_HANDLER_MESSAGE_CONTEXT} keeps the tracing
+     * scope of a message flow on its message context, so it is released together with the message.
+     */
+    public static final String OPENTELEMETRY_SPAN_HANDLER = "opentelemetry.span.handler";
+    public static final String SPAN_HANDLER_LEGACY = "legacy";
+    public static final String SPAN_HANDLER_MESSAGE_CONTEXT = "message_context";
+
+    /**
+     * Message context property that holds the tracing scope of the message flow, when the message context based span
+     * handler is used. Clones and callback message contexts copy it by reference, so a flow has a single scope.
+     */
+    public static final String TRACING_SCOPE_PROPERTY = "_OTEL_TRACING_SCOPE_";
 }

@@ -108,6 +108,16 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
     }
 
     /**
+     * Sets the OpenTelemetry instance used by the static propagation helpers of this class, when another span handler
+     * implementation is in use.
+     *
+     * @param openTelemetry OpenTelemetry instance.
+     */
+    static void setOpenTelemetry(OpenTelemetry openTelemetry) {
+        SpanHandler.openTelemetry = openTelemetry;
+    }
+
+    /**
      * Inject tracer specific information to tracerSpecificCarrier.
      *
      * @param span                  Span which the span information will be injected to the tracerSpecificCarrier.

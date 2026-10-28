@@ -45,7 +45,16 @@ public class StatisticsCloseEventListener {
      * @param synCtx synapse message context
      */
     public void invokeCloseEventEntry(MessageContext synCtx) {
-        TelemetryUtil.decrementBranchCount(synCtx);
         CloseEventCollector.closeFlowForcefully(synCtx, false);
+    }
+
+    /**
+     * Whether invokeCloseEventEntry closes an outer level component (task, inbound endpoint), which closes the main
+     * branch of the flow. A MediatorWorker that starts a flow closes the main branch itself when this is false.
+     *
+     * @return whether the close event of this listener closes an outer level component
+     */
+    public boolean closesOuterLayerComponent() {
+        return componentType != null && TelemetryUtil.isOuterLayerComponent(componentType);
     }
 }

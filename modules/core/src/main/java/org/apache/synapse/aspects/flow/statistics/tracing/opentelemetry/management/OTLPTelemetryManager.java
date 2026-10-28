@@ -42,8 +42,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandler;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScopeManager;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandlerFactory;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.Enumeration;
@@ -55,7 +54,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
     private SdkMeterProvider sdkMeterProvider;
     private OpenTelemetry openTelemetry;
     private TelemetryTracer tracer;
-    private SpanHandler handler;
+    private OpenTelemetrySpanHandler handler;
 
     @Override
     public void init() {
@@ -174,7 +173,7 @@ public class OTLPTelemetryManager implements OpenTelemetryManager {
             logger.debug("Tracer for instrumentation '" + TelemetryConstants.OPENTELEMETRY_INSTRUMENTATION_NAME + "' is configured with " +
                     (useHttp ? "HTTP" : "gRPC") + " protocol");
         }
-        this.handler = new SpanHandler(tracer, openTelemetry, new TracingScopeManager());
+        this.handler = SpanHandlerFactory.createSpanHandler(tracer, openTelemetry);
     }
 
     @Override

@@ -418,30 +418,37 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
         synCtx.setEnvironment(this);
         MediatorWorker mediatorWorker = new MediatorWorker(seq, synCtx);
-        /*
-         * If the method is invoked by the task
-         * Then check for the endpoint name and then set the Log Appender Content
-         */
-        if (synCtx.getProperty(SynapseConstants.TASK_NAME) != null) {
-            taskName = (String) synCtx.getProperty(SynapseConstants.TASK_NAME);
-            StartUpController startUpController =
-                    (StartUpController) synCtx.getConfiguration().getStartup(taskName);
-            if (startUpController != null) {
-                CustomLogSetter.getInstance().setLogAppender(startUpController.getArtifactContainerName());
-                if (startUpController.getAspectConfiguration() != null) {
-                    aspectConfiguration = startUpController.getAspectConfiguration();
-                }
-                if (isStatisticsEnabled) {
-                    statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, taskName,
-                            aspectConfiguration, ComponentType.TASK);
-                    QuartzTaskStatisticsCloseEventListener statisticsCloseEventListener
-                            = new QuartzTaskStatisticsCloseEventListener(taskName, statisticReportingIndex);
-                    mediatorWorker.setStatisticsCloseEventListener(statisticsCloseEventListener);
-                }
+        try {
+            /*
+             * If the method is invoked by the task
+             * Then check for the endpoint name and then set the Log Appender Content
+             */
+            if (synCtx.getProperty(SynapseConstants.TASK_NAME) != null) {
+                taskName = (String) synCtx.getProperty(SynapseConstants.TASK_NAME);
+                StartUpController startUpController =
+                        (StartUpController) synCtx.getConfiguration().getStartup(taskName);
+                if (startUpController != null) {
+                    CustomLogSetter.getInstance().setLogAppender(startUpController.getArtifactContainerName());
+                    if (startUpController.getAspectConfiguration() != null) {
+                        aspectConfiguration = startUpController.getAspectConfiguration();
+                    }
+                    if (isStatisticsEnabled) {
+                        statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, taskName,
+                                aspectConfiguration, ComponentType.TASK);
+                        QuartzTaskStatisticsCloseEventListener statisticsCloseEventListener
+                                = new QuartzTaskStatisticsCloseEventListener(taskName, statisticReportingIndex);
+                        mediatorWorker.setStatisticsCloseEventListener(statisticsCloseEventListener);
+                    }
 
+                }
             }
+            executorService.execute(mediatorWorker);
+        } catch (RuntimeException | Error e) {
+            // The worker will never run, so it does not continue the message flow (RejectedExecutionException, or a
+            // failure in getStartup / reportEntryEvent)
+            mediatorWorker.releaseBranch();
+            throw e;
         }
-        executorService.execute(mediatorWorker);
 
     }
 
@@ -491,6 +498,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
 
         if (!sequential) {
+            MediatorWorker mediatorWorker = null;
             try {
                 if (isStatisticsEnabled) {
                     statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, inboundName,
@@ -498,17 +506,25 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 }
                 InboundEndpointStatisticsCloseEventListener statisticsCloseEventListener
                         = new InboundEndpointStatisticsCloseEventListener(inboundName, statisticReportingIndex);
-                MediatorWorker mediatorWorker = new MediatorWorker(seq, synCtx);
+                mediatorWorker = new MediatorWorker(seq, synCtx);
                 mediatorWorker.setStatisticsCloseEventListener(statisticsCloseEventListener);
                 this.executorServiceInbound.execute(mediatorWorker);
                 return true;
             } catch (RejectedExecutionException re) {
+                if (mediatorWorker != null) {
+                    mediatorWorker.releaseBranch();
+                }
                 // If the pool is full complete the execution with the same thread
                 log.warn("Inbound worker pool has reached the maximum capacity and will be processing current message sequentially.");
                 if (isStatisticsEnabled) {
                     CloseEventCollector.tryEndFlow(synCtx, inboundName, ComponentType.INBOUNDENDPOINT,
                             statisticReportingIndex, false);
                 }
+            } catch (RuntimeException | Error e) {
+                if (mediatorWorker != null) {
+                    mediatorWorker.releaseBranch();
+                }
+                throw e;
             }
         }
 

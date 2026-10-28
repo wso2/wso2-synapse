@@ -39,4 +39,18 @@ public interface OpenTelemetrySpanHandler
      * @return Span store of that message flow.
      */
     SpanStore getSpanStore(MessageContext messageContext);
+
+    /**
+     * Ends a MediatorWorker of the flow of the given context: called once per worker in the worker's thread at the end of
+     * run(), and in the creating thread when the worker cannot be started. The handler must run branchEnd exactly once.
+     * branchEnd releases the worker's branch unit on the statistics event holder and reports the worker's statistics
+     * close events (which call this handler's close methods). A handler may hold a lock around it so that no decision on
+     * the end of the flow is taken between the release and those events. Default: runs it.
+     *
+     * @param synCtx    Message context the worker mediated.
+     * @param branchEnd End sequence of the worker.
+     */
+    default void handleBranchEnd(MessageContext synCtx, Runnable branchEnd) {
+        branchEnd.run();
+    }
 }

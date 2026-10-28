@@ -46,7 +46,6 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.commons.json.JsonUtil;
@@ -146,7 +145,6 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 for (Object item : list) {
                     MessageContext iteratedMsgCtx = getIteratedMessage(synCtx, msgNumber++, msgCount, item);
                     ContinuationStackManager.addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
-                    incrementBranchCountIfTracked(synCtx);
                     boolean result = target.mediate(iteratedMsgCtx);
                     if (!parallelExecution && result && !continueWithoutAggregation) {
                         aggregationResult = aggregateMessages(iteratedMsgCtx, synLog);
@@ -164,7 +162,6 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
                 for (Object item : list) {
                     MessageContext iteratedMsgCtx = getIteratedMessage(synCtx, msgNumber++, msgCount, item);
                     ContinuationStackManager.addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
-                    incrementBranchCountIfTracked(synCtx);
                     boolean result = target.mediate(iteratedMsgCtx);
                     if (!parallelExecution && result && !continueWithoutAggregation) {
                         aggregationResult = aggregateMessages(iteratedMsgCtx, synLog);
@@ -667,19 +664,6 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
 
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
             synCtx.setProperty(closeStatisticsPendingKey, true);
-        }
-    }
-
-    /**
-     * Increments the branch count of the flow for an iteration which runs in a new MediatorWorker without being
-     * aggregated, so that the flow is not considered finished until the MediatorWorker closes the branch.
-     *
-     * @param synCtx message context of the flow the iterations are created from
-     */
-    private void incrementBranchCountIfTracked(MessageContext synCtx) {
-
-        if (continueWithoutAggregation && target.isAsynchronous()) {
-            TelemetryUtil.incrementBranchCount(synCtx);
         }
     }
 

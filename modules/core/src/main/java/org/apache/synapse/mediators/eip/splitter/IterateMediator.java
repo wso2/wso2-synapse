@@ -45,7 +45,6 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryUtil;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -186,7 +185,6 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                         ContinuationStackManager.
                                 addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
                         if (target.isAsynchronous()) {
-                            TelemetryUtil.incrementBranchCount(iteratedMsgCtx);
                             target.mediate(iteratedMsgCtx);
                         } else {
                             try {
@@ -254,7 +252,6 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                     ContinuationStackManager.
                             addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
                     if (target.isAsynchronous()) {
-                        TelemetryUtil.incrementBranchCount(iteratedMsgCtx);
                         target.mediate(iteratedMsgCtx);
                     } else {
                         try {

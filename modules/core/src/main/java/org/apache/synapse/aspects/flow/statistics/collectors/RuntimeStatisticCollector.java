@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingCountHolder;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.OpenTelemetryManagerHolder;
@@ -358,9 +359,7 @@ public abstract class RuntimeStatisticCollector {
         if (statCount <= 0 && eventHolder.countHolder.getCallBackCount() <= 0 && eventHolder.countHolder.getBranchCount() <= 0
                 && !continueStatisticFlow(messageContext)) {
             eventHolder.setEvenCollectionFinished(true);
-            if (isMediationFlowStatisticsEnabled) {
-                messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
-            }
+            enqueueEventHolder(messageContext, eventHolder);
         }
     }
 
@@ -392,6 +391,11 @@ public abstract class RuntimeStatisticCollector {
         }
 
         if (eventHolder.isEvenCollectionFinished()) {
+            // Keep counting callbacks after the collection finished: the OpenTelemetry handler decides from this count
+            // when the flow has no work left. Example: an error closed the collection (addEventAndCloseFlow) and the
+            // fault sequence then makes a non-blocking call. Without this +1 the handler would see no pending callback
+            // and end the root span before the response's spans start. Only the count changes; the event is dropped.
+            eventHolder.countHolder.incrementCallBackCount();
             handleError(eventHolder, event);
             return;
         }
@@ -416,6 +420,10 @@ public abstract class RuntimeStatisticCollector {
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
         if (eventHolder.isEvenCollectionFinished()) {
+            // Keep counting callbacks after the collection finished: the OpenTelemetry handler decides from this count
+            // when the flow has no work left. Matches the +1 in addEventAndIncrementCallbackCount, also for callbacks
+            // added before the collection finished and completed after it.
+            eventHolder.countHolder.decrementAndGetCallbackCount();
             handleError(eventHolder, event);
             return;
         }
@@ -425,9 +433,7 @@ public abstract class RuntimeStatisticCollector {
         if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0
         && eventHolder.countHolder.getBranchCount() <= 0) {
             eventHolder.setEvenCollectionFinished(true);
-            if (isMediationFlowStatisticsEnabled) {
-                messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
-            }
+            enqueueEventHolder(messageContext, eventHolder);
         }
     }
 
@@ -476,11 +482,64 @@ public abstract class RuntimeStatisticCollector {
 
             eventHolder.setEvenCollectionFinished(true);
             eventHolder.setMessageFlowError(true);
-            if (eventHolder.countHolder.decrementAndGetBranchCount() <= 0){
-                if (isMediationFlowStatisticsEnabled) {
-                    messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
-                }
+            // An error closes the main branch of the flow (at most once). Units of MediatorWorkers that are still
+            // running stay counted; the last of them publishes the holder when it ends (tryFinishEventCollection).
+            // Before: decrementAndGetBranchCount() here took one unit per error close (a unit that could belong to a
+            // running worker), and when workers were still running nothing published the holder later, so the
+            // statistics of the flow were lost.
+            eventHolder.countHolder.closeMainBranch();
+            if (eventHolder.countHolder.getBranchCount() <= 0) {
+                enqueueEventHolder(messageContext, eventHolder);
             }
+        }
+    }
+
+    /**
+     * Called by a MediatorWorker after it released its branch unit and reported its close events. Publishes the event
+     * holder if that was the last pending work:
+     * - collection already closed by an error (addEventAndCloseFlow) while workers were running: publish once the
+     *   last worker has ended (branchCount <= 0);
+     * - checkFlowCompletion (scatter messages, which report no close event of their own): the completion check of
+     *   addEventAndDecrementCount, without adding an event.
+     *
+     * @param messageContext      message context of the worker
+     * @param eventHolder         event holder whose branch count the worker incremented; nothing is done when null
+     * @param checkFlowCompletion whether to run the completion check of an unfinished collection
+     */
+    public static void tryFinishEventCollection(MessageContext messageContext,
+                                                StatisticsReportingEventHolder eventHolder, boolean checkFlowCompletion) {
+        if (eventHolder == null) {
+            return;
+        }
+        synchronized (eventHolder) {
+            StatisticsReportingCountHolder counts = eventHolder.countHolder;
+            if (eventHolder.isEvenCollectionFinished()) {
+                if (eventHolder.isMessageFlowError() && counts.getBranchCount() <= 0) {
+                    enqueueEventHolder(messageContext, eventHolder);
+                }
+                return;
+            }
+            if (checkFlowCompletion && counts.getStatCount() <= 0 && counts.getCallBackCount() <= 0
+                    && counts.getBranchCount() <= 0 && !continueStatisticFlow(messageContext)) {
+                eventHolder.setEvenCollectionFinished(true);
+                enqueueEventHolder(messageContext, eventHolder);
+            }
+        }
+    }
+
+    /**
+     * Enqueues the event holder for publishing, at most once per holder.
+     * <p>
+     * Several paths can now find a flow finished: the completion checks of the close and callback events, the error
+     * close, and the end of the last MediatorWorker (tryFinishEventCollection). markEnqueued makes sure the statistics
+     * of a flow are published once even when two of them race.
+     *
+     * @param messageContext message context of the flow
+     * @param eventHolder    event holder to publish
+     */
+    private static void enqueueEventHolder(MessageContext messageContext, StatisticsReportingEventHolder eventHolder) {
+        if (isMediationFlowStatisticsEnabled && eventHolder.markEnqueued()) {
+            messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
         }
     }
 
