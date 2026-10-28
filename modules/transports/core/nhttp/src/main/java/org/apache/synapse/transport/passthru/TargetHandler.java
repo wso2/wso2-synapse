@@ -43,8 +43,11 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
+import org.apache.synapse.transport.http.access.Access;
+import org.apache.synapse.transport.http.access.AccessConstants;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
+import org.apache.synapse.transport.http.conn.LoggingUtils;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
@@ -328,6 +331,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                     } else {
                         metrics.incrementBytesSent(bytesWritten);
                     }
+                    Access.incrementBodyBytes(conn.getHttpRequest(), AccessConstants.HTTP_REQUEST_BODY_BYTES,
+                            bytesWritten);
                 }
 
                 if (encoder.isCompleted()) {
@@ -425,6 +430,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 tunnelHandler.handleResponse(response, conn);
                 if (tunnelHandler.isSuccessful()) {
                     log.debug(conn + ": Tunnel established");
+                    LoggingUtils.logPendingCombinedAccess(conn);
                     conn.resetInput();
                     conn.requestOutput();
                     return;
@@ -539,6 +545,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                     log.debug(conn + ": Received no-content response " +
                             response.getStatusLine().getStatusCode());
                 }
+                LoggingUtils.logPendingCombinedAccess(conn);
                 conn.resetInput();
             }
             TargetResponse targetResponse = new TargetResponse(
@@ -729,6 +736,8 @@ public class TargetHandler implements NHttpClientEventHandler {
                 } else {
                     metrics.incrementBytesReceived(responseRead);
                 }
+                Access.incrementBodyBytes(conn.getHttpResponse(), AccessConstants.HTTP_RESPONSE_BODY_BYTES,
+                        responseRead);
             }
             if (decoder.isCompleted()) {
                 if (metrics.getLevel() == MetricsCollector.LEVEL_FULL) {
@@ -763,6 +772,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                     );
                     conn.getContext().removeAttribute(PassThroughConstants.RES_ARRIVAL_TIME);
                 }
+                LoggingUtils.logPendingCombinedAccess(conn);
             }
         } catch (IOException e) {
             logException(conn, e);

@@ -52,6 +52,9 @@ public class AccessConstants {
     public static final String HTTP_REQUEST_TIME_MS = "http.request.time.ms";
     public static final String HTTP_RESPONSE_TIME_MS = "http.response.time.ms";
 
+    public static final String HTTP_REQUEST_BODY_BYTES = "http.request.body.bytes";
+    public static final String HTTP_RESPONSE_BODY_BYTES = "http.response.body.bytes";
+
     /**
      * The directory in which log files are created.
      */
