@@ -84,6 +84,7 @@ public class SynapseDebugCommandConstants {
     public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY = "unable to alter message context property";
     public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_VARIABLES = "unable to acquire message variables";
     public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_VARIABLE = "unable to alter message variable";
+    public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_PAYLOAD = "unable to alter message payload";
     public static final String DEBUG_COMMAND_RESPONSE_API_RESOURCE_NOT_FOUND = "api resource not found";
     public static final String DEBUG_COMMAND_RESPONSE_API_NOT_FOUND = "api not found";
     public static final String DEBUG_COMMAND_RESPONSE_PROXY_NOT_FOUND = "proxy not found";

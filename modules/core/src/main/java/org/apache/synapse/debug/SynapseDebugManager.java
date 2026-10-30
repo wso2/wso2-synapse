@@ -20,21 +20,29 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMNode;
+import org.apache.axiom.om.OMXMLBuilderFactory;
 import org.apache.axiom.om.impl.builder.StAXBuilder;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
+import org.apache.axiom.soap.SOAPBody;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -61,10 +69,12 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -104,7 +114,6 @@ public class SynapseDebugManager implements Observer {
     private static final Log log = LogFactory.getLog(SynapseDebugManager.class);
     private Map addedPropertyValuesMap;
     private final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-    private static final String JSON_CONTENT_TYPE = "application/json";
     private static final String TEXT_CONTENT_TYPE = "text/plain";
 
     protected SynapseDebugManager() {
@@ -1255,7 +1264,15 @@ public class SynapseDebugManager implements Observer {
                     axis2smc.getAxis2MessageContext().getOperationContext().setProperty(propertyKey, propertyValue);
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE) &&
                         synCtx instanceof Axis2MessageContext) {
-                    setEnvelope(propertyValue, synCtx);
+                    try {
+                        setEnvelope(propertyValue, synCtx);
+                    } catch (SynapseException e) {
+                        log.error("Failed to set the message payload", e);
+                        this.advertiseCommandResponse(createDebugCommandResponse(false,
+                                SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_PAYLOAD + " : "
+                                        + e.getMessage()).toString());
+                        return;
+                    }
                 }
             } else {
                 if (propertyContext == null || SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT
@@ -1295,6 +1312,7 @@ public class SynapseDebugManager implements Observer {
                     this.advertiseCommandResponse(createDebugCommandResponse(false,
                             SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY)
                             .toString());
+                    return;
                 }
             }
         } catch (JSONException e) {
@@ -1302,34 +1320,104 @@ public class SynapseDebugManager implements Observer {
             this.advertiseCommandResponse(createDebugCommandResponse(false,
                     SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY)
                     .toString());
+            return;
         }
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
     }
 
-    private void setEnvelope(String propertyValue, MessageContext synCtx) {
+    /**
+     * Replaces the payload of the suspended message. The payload is interpreted in the current format of the
+     * message (the same format the debugger shows it in): JSON, plain text, or XML. For XML, a complete SOAP
+     * envelope replaces the whole envelope, while any other element replaces the content of the SOAP body.
+     *
+     * @param payload new payload
+     * @param synCtx  suspended message context
+     * @throws SynapseException if the payload is not valid for the message format
+     */
+    void setEnvelope(String payload, MessageContext synCtx) {
 
-        String mediaType = (String) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                .getProperty(SynapseConstants.AXIS2_PROPERTY_CONTENT_TYPE);
         org.apache.axis2.context.MessageContext axis2MessageContext =
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if (SynapseConstants.XML_CONTENT_TYPE.equals(mediaType)) {
-            try {
+        String mediaType = getPayloadMediaType(axis2MessageContext);
+        try {
+            if (mediaType.contains("json") || JsonUtil.hasAJsonPayload(axis2MessageContext)) {
+                validateJson(payload);
+                JsonUtil.getNewJsonPayload(axis2MessageContext, payload, true, true);
+            } else {
+                boolean isText = mediaType.startsWith(TEXT_CONTENT_TYPE);
+                OMElement element = null;
+                // The debugger shows XML and text messages as the full SOAP envelope, so accept an edited envelope
+                // for both. Any other text content of a text message is taken as the new text payload.
+                if (!isText || payload.trim().startsWith("<")) {
+                    try {
+                        element = convertStringToOM(payload);
+                        // Parse fully now so that invalid XML is rejected before the current payload is changed
+                        element.build();
+                    } catch (XMLStreamException | OMException e) {
+                        if (!isText) {
+                            throw e;
+                        }
+                    }
+                }
                 JsonUtil.removeJsonPayload(axis2MessageContext);
-                OMElement omXML = convertStringToOM(propertyValue);
-                axis2MessageContext.getEnvelope().getBody().addChild(omXML);
-            } catch (XMLStreamException e) {
-                log.error("Error creating SOAP Envelope from source " + propertyValue, e);
+                if (element != null && isSoapEnvelope(element)) {
+                    SOAPEnvelope envelope = (SOAPEnvelope) OMXMLBuilderFactory.createSOAPModelBuilder(
+                            new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8)),
+                            StandardCharsets.UTF_8.name()).getDocumentElement();
+                    envelope.build();
+                    synCtx.setEnvelope(envelope);
+                } else if (isText) {
+                    replaceBodyContent(synCtx.getEnvelope().getBody(), getTextElement(payload));
+                } else {
+                    replaceBodyContent(synCtx.getEnvelope().getBody(), element);
+                }
             }
-        } else if (JSON_CONTENT_TYPE.equals(mediaType)) {
-            try {
-                JsonUtil.getNewJsonPayload(axis2MessageContext, propertyValue, true, true);
-            } catch (AxisFault axisFault) {
-                log.error("Error creating JSON Payload from source " + propertyValue, axisFault);
-            }
-        } else if (TEXT_CONTENT_TYPE.equals(mediaType)) {
-            JsonUtil.removeJsonPayload(axis2MessageContext);
-            axis2MessageContext.getEnvelope().getBody().addChild(getTextElement(propertyValue));
+        } catch (XMLStreamException | OMException e) {
+            throw new SynapseException("invalid XML payload", e);
+        } catch (AxisFault e) {
+            throw new SynapseException(e.getMessage(), e);
+        } catch (IOException e) {
+            throw new SynapseException("invalid JSON payload", e);
         }
+    }
+
+    /**
+     * Returns the media type of the current payload, using the same property the debugger uses when it reads it.
+     */
+    private String getPayloadMediaType(org.apache.axis2.context.MessageContext axis2MessageContext) {
+
+        Object mediaType = axis2MessageContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
+        if (mediaType == null) {
+            mediaType = axis2MessageContext.getProperty(SynapseConstants.AXIS2_PROPERTY_CONTENT_TYPE);
+        }
+        return mediaType == null ? "" : mediaType.toString().toLowerCase();
+    }
+
+    private void validateJson(String payload) throws IOException {
+
+        JsonReader reader = new JsonReader(new StringReader(payload));
+        reader.setLenient(false);
+        new Gson().getAdapter(JsonElement.class).read(reader);
+        if (reader.peek() != JsonToken.END_DOCUMENT) {
+            throw new IOException("unexpected content after the end of the JSON payload");
+        }
+    }
+
+    private boolean isSoapEnvelope(OMElement element) {
+
+        return "Envelope".equals(element.getLocalName())
+                && element.getNamespace() != null
+                && (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(element.getNamespace().getNamespaceURI())
+                || SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(element.getNamespace().getNamespaceURI()));
+    }
+
+    private void replaceBodyContent(SOAPBody body, OMElement content) {
+
+        OMNode child;
+        while ((child = body.getFirstOMChild()) != null) {
+            child.detach();
+        }
+        body.addChild(content);
     }
 
     private OMElement getTextElement(String content) {
@@ -1457,6 +1545,7 @@ public class SynapseDebugManager implements Observer {
             this.advertiseCommandResponse(createDebugCommandResponse(false,
                     SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_VARIABLE)
                     .toString());
+            return;
         }
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
     }
