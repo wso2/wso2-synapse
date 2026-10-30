@@ -18,10 +18,14 @@ package org.apache.synapse.debug;
 
 
 import junit.framework.TestCase;
+import org.apache.axiom.om.OMElement;
+import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.core.axis2.MessageContextCreatorForAxis2;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -33,8 +37,10 @@ import org.apache.synapse.mediators.TestUtils;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.mediators.template.TemplateParam;
+import org.codehaus.jettison.json.JSONObject;
 
 import java.util.HashSet;
+import java.util.Iterator;
 
 public class DebugManagerTest extends TestCase {
     private static SynapseConfiguration synConfig;
@@ -742,6 +748,84 @@ public class DebugManagerTest extends TestCase {
                 "\"sequence\":{\"inbound\":{\"inbound-key\":\"test_inbound_4\",\"sequence-type\":\"inbound_faultseq\",\"mediator-position\":\"0\"}}}";
         dm.processDebugCommand(debug_command);
         assertTrue(((AbstractMediator)errorSeq.getChild(0)).isSkipEnabled());
+    }
+
+    public void testSetJsonPayload() throws Exception {
+        MessageContext mc = TestUtils.getTestContextJson("{\"name\":\"old\"}", null);
+        setMessageType(mc, "application/json; charset=UTF-8");
+        setPayload(mc, "{\"name\":\"new\",\"items\":[1,2]}");
+        assertEquals("{\"name\":\"new\",\"items\":[1,2]}", JsonUtil.jsonPayloadToString(getAxis2Context(mc)));
+    }
+
+    public void testSetInvalidJsonPayloadKeepsPayload() throws Exception {
+        MessageContext mc = TestUtils.getTestContextJson("{\"name\":\"old\"}", null);
+        setMessageType(mc, "application/json");
+        setPayload(mc, "{\"name\":");
+        assertEquals("{\"name\":\"old\"}", JsonUtil.jsonPayloadToString(getAxis2Context(mc)));
+    }
+
+    public void testSetXmlPayloadReplacesBody() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order><id>1</id></order>");
+        setMessageType(mc, "application/xml");
+        setPayload(mc, "<customer><name>new</name></customer>");
+        assertBodyContainsOnly(mc, "customer");
+        assertEquals("new", mc.getEnvelope().getBody().getFirstElement().getFirstElement().getText());
+    }
+
+    public void testSetSoapEnvelopePayload() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order><id>1</id></order>");
+        setMessageType(mc, "text/xml");
+        setPayload(mc, "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                "<soapenv:Body><customer>new</customer></soapenv:Body></soapenv:Envelope>");
+        assertBodyContainsOnly(mc, "customer");
+        assertEquals("new", mc.getEnvelope().getBody().getFirstElement().getText());
+    }
+
+    public void testSetInvalidXmlPayloadKeepsPayload() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order><id>1</id></order>");
+        setMessageType(mc, "application/xml");
+        setPayload(mc, "<customer>");
+        assertBodyContainsOnly(mc, "order");
+    }
+
+    public void testSetTextPayload() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order><id>1</id></order>");
+        setMessageType(mc, "text/plain");
+        setPayload(mc, "hello world");
+        assertBodyContainsOnly(mc, "text");
+        assertEquals("hello world", mc.getEnvelope().getBody().getFirstElement().getText());
+    }
+
+    private void setPayload(MessageContext mc, String payload) throws Exception {
+        JSONObject property = new JSONObject();
+        property.put("property-name", "Envelope");
+        property.put("property-value", payload);
+        JSONObject command = new JSONObject();
+        command.put("command", "set");
+        command.put("command-argument", "property");
+        command.put("context", "Envelope");
+        command.put("property", property);
+        dm.setMessageContext(mc);
+        try {
+            dm.processDebugCommand(command.toString());
+        } finally {
+            dm.setMessageContext(null);
+        }
+    }
+
+    private static org.apache.axis2.context.MessageContext getAxis2Context(MessageContext mc) {
+        return ((Axis2MessageContext) mc).getAxis2MessageContext();
+    }
+
+    private static void setMessageType(MessageContext mc, String messageType) {
+        getAxis2Context(mc).setProperty(Constants.Configuration.MESSAGE_TYPE, messageType);
+    }
+
+    private static void assertBodyContainsOnly(MessageContext mc, String localName) {
+        Iterator children = mc.getEnvelope().getBody().getChildElements();
+        assertTrue(children.hasNext());
+        assertEquals(localName, ((OMElement) children.next()).getLocalName());
+        assertFalse(children.hasNext());
     }
 
 }

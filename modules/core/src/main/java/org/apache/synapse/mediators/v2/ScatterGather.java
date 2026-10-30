@@ -125,6 +125,12 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
     @Override
     public boolean mediate(MessageContext synCtx) {
 
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         boolean aggregationResult = false;
 
         SynapseLog synLog = getLog(synCtx);
