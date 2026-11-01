@@ -40,11 +40,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * to a configured ReplayDataWriter.
  * A dedicated background thread consumes records from the queue and writes them using the
  * ReplayDataWriter implementation configured dynamically through properties.
- * This class is thread-safe and supports graceful shutdown by closing the writer and stopping the background thread.
+ * This class is thread-safe. On JVM shutdown, queued records are written within a bounded time and the writer
+ * is closed once.
  */
 public class ReplayDispatcher {
     private static final Log log = LogFactory.getLog(ReplayDispatcher.class);
     private static volatile ReplayDispatcher instance;
+    // Set when initialization fails. The configuration is read only once, so initialization is not retried.
+    private static volatile boolean initializationFailed = false;
+    private volatile boolean running = true;
+    // Maximum time to wait for the workers to write the queued records during shutdown
+    private static final long SHUTDOWN_TIMEOUT_MILLIS = 10000;
+    private ExecutorService replayWorkerThreadPool;
     // Counter tracking the number of dropped replay records due to queue overflow
     private final AtomicLong droppedCount = new AtomicLong(0);
     // Writer instance that handles actual replay data persistence
@@ -93,8 +100,15 @@ public class ReplayDispatcher {
      */
     public static ReplayDispatcher getInstance() {
         if (instance == null) {
+            if (initializationFailed) {
+                throw new IllegalStateException("ReplayDispatcher is not available as its initialization failed");
+            }
             synchronized (ReplayDispatcher.class) {
                 if (instance == null) {
+                    if (initializationFailed) {
+                        throw new IllegalStateException(
+                                "ReplayDispatcher is not available as its initialization failed");
+                    }
                     try {
                         String writerClassName = MiscellaneousUtil.getProperty(props,
                                 PassThroughConstants.REPLAY_TRANSACTION_WRITER_CLASS_KEY, null);
@@ -117,9 +131,13 @@ public class ReplayDispatcher {
                             log.fatal("Failed to instantiate ReplayDataWriter with no-arg constructor", e);
                             throw new IllegalStateException("Failed to instantiate ReplayDataWriter", e);
                         }
-                        instance = new ReplayDispatcher(writerInstance);
+                        ReplayDispatcher dispatcher = new ReplayDispatcher(writerInstance);
+                        Runtime.getRuntime().addShutdownHook(
+                                new Thread(dispatcher::shutdown, "ReplayTransaction-Shutdown"));
+                        instance = dispatcher;
                         log.info("ReplayDispatcher initialized with custom writer class: " + writerClassName);
-                    } catch (Exception e) {
+                    } catch (Exception | LinkageError e) {
+                        initializationFailed = true;
                         log.fatal("Failed to initialize ReplayDispatcher dynamically", e);
                         throw new IllegalStateException("Failed to initialize ReplayDispatcher", e);
                     }
@@ -138,6 +156,12 @@ public class ReplayDispatcher {
      * @param data      raw byte array of the message content
      */
     public void addReplayRecord(String messageId, Map<String, Object> metadata, byte[] data) {
+        if (!running) {
+            if (log.isDebugEnabled()) {
+                log.debug("ReplayDispatcher is shut down; replay record not accepted for messageID: " + messageId);
+            }
+            return;
+        }
         boolean accepted = replayQueue.offer(new ReplayRecord(messageId, metadata, data));
         if (!accepted) {
             long dropped = droppedCount.incrementAndGet();
@@ -174,11 +198,11 @@ public class ReplayDispatcher {
     /**
      * Starts the background thread pool which asynchronously writes buffered replay records using
      * the configured ReplayDataWriter.
-     * The worker threads run until the queue is drained.
+     * The worker threads run until {@link #shutdown()} is called and the queue is drained.
      */
     private void startReplayWorker() {
         // ExecutorService managing a configurable pool of worker threads for asynchronously processing replay records
-        ExecutorService replayWorkerThreadPool = new ThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE,
+        replayWorkerThreadPool = new ThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE,
                 KEEP_ALIVE_TIME_MILLIS, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
             private final AtomicLong threadIndex = new AtomicLong(1);
 
@@ -192,7 +216,7 @@ public class ReplayDispatcher {
 
         for (int i = 0; i < ReplayDispatcher.CORE_POOL_SIZE; i++) {
             replayWorkerThreadPool.submit(() -> {
-                while (!replayQueue.isEmpty()) {
+                while (running || !replayQueue.isEmpty()) {
                     ReplayRecord replayRecord = replayQueue.poll();
                     if (replayRecord != null) {
                         try {
@@ -200,7 +224,7 @@ public class ReplayDispatcher {
                             if (log.isDebugEnabled()) {
                                 log.debug("Successfully wrote buffer data for messageID: " + replayRecord.getMessageId());
                             }
-                        } catch (IOException e) {
+                        } catch (IOException | RuntimeException | LinkageError e) {
                             log.error("Failed to write buffered data for messageID: " + replayRecord.getMessageId(), e);
                         }
                     } else {
@@ -217,13 +241,40 @@ public class ReplayDispatcher {
                         }
                     }
                 }
-                try {
-                    replayDataWriter.close();
-                    log.info("ReplayTransaction-BufferDataWriter closed BufferDataWriter cleanly");
-                } catch (IOException e) {
-                    log.error("Failed to close BufferDataWriter during thread termination", e);
-                }
             });
+        }
+    }
+
+    /**
+     * Stops accepting replay records, waits up to {@value #SHUTDOWN_TIMEOUT_MILLIS} ms for the workers to write
+     * the queued records, and closes the writer once. Called from a JVM shutdown hook. Calling it more than
+     * once has no effect.
+     */
+    public void shutdown() {
+        shutdown(SHUTDOWN_TIMEOUT_MILLIS);
+    }
+
+    synchronized void shutdown(long timeoutMillis) {
+        if (!running) {
+            return;
+        }
+        running = false;
+        replayWorkerThreadPool.shutdown();
+        try {
+            if (!replayWorkerThreadPool.awaitTermination(timeoutMillis, TimeUnit.MILLISECONDS)) {
+                log.warn("Replay workers did not finish within " + timeoutMillis + " ms; "
+                        + replayQueue.size() + " queued replay records were not written");
+                replayWorkerThreadPool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            replayWorkerThreadPool.shutdownNow();
+        }
+        try {
+            replayDataWriter.close();
+            log.info("ReplayDispatcher shut down and closed the replay data writer");
+        } catch (IOException | RuntimeException | LinkageError e) {
+            log.error("Failed to close the replay data writer during shutdown", e);
         }
     }
 }
