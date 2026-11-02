@@ -77,6 +77,12 @@ final class ReplayTestUtils {
     }
 
     static void resetDispatcher() throws Exception {
+        Field instance = ReplayDispatcher.class.getDeclaredField("instance");
+        instance.setAccessible(true);
+        ReplayDispatcher current = (ReplayDispatcher) instance.get(null);
+        if (current != null) {
+            current.shutdown(10000);
+        }
         setSingleton(null);
         for (Field field : ReplayDispatcher.class.getDeclaredFields()) {
             if ("initializationFailed".equals(field.getName())) {
