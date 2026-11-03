@@ -420,7 +420,7 @@ public class Axis2Sender {
 
             // Response is not in SOAP12 format (i.e. can be SOAP11 or any other (non REST) format)
             // Hence, no conversion required is required
-            if (!isResponseSOAP12 && !responseCtx.isDoingREST()) {
+            if (responseCtx.isSOAP11() && !responseCtx.isDoingREST()) {
                 return;
             }
 
@@ -449,7 +449,7 @@ public class Axis2Sender {
                     SynapseConstants.SOAP11_CONTENT_TYPE);
         } else {        // If request is in SOAP12 format
 
-            if (!isResponseSOAP11 && !responseCtx.isDoingREST()) {  // Response is not SOAP11 not REST - it is in SOAP12
+            if (!responseCtx.isSOAP11() && !responseCtx.isDoingREST()) {  // Response is not SOAP11 not REST - it is in SOAP12
                 return;
             }
 
