@@ -304,8 +304,24 @@ class TestingAgent {
                 testSummary.setTestCaseName(currentTestCaseName);
                 testSuiteSummary.setRecentTestCaseName(currentTestCaseName);
 
+                if (!TYPE_SEQUENCE.equals(mainTestArtifactType) && !currentTestCase.getVariableMap().isEmpty()) {
+                    log.warn("Input variables are supported only for sequence test cases. Ignoring variables " +
+                            "defined in the test case - " + currentTestCaseName);
+                }
+
                 switch (mainTestArtifactType) {
                     case TYPE_SEQUENCE:
+                        String inputVariableError =
+                                TestCasesMediator.validateInputVariables(currentTestCase.getVariableMap());
+                        if (inputVariableError != null) {
+                            String errorMessage = "Invalid input variables - " + inputVariableError;
+                            log.error("Skipping the test case - " + currentTestCaseName + ". " + errorMessage);
+                            testSuiteSummary.setMediationStatus(Constants.PASSED_KEY);
+                            testSummary.setMediationStatus(Constants.FAILED_KEY);
+                            testSummary.setTestException(errorMessage);
+                            break;
+                        }
+
                         Map.Entry<Boolean, MessageContext> mediateResult =
                                 TestCasesMediator.sequenceMediate(currentTestCase, synapseConfiguration, key);
 

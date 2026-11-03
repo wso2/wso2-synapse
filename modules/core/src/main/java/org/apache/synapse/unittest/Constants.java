@@ -70,6 +70,10 @@ public class Constants {
     static final String TEST_CASE_INPUT_PROPERTY_NAME = "name";
     static final String TEST_CASE_INPUT_PROPERTY_VALUE = "value";
     static final String TEST_CASE_INPUT_PROPERTY_SCOPE = "scope";
+    static final String TEST_CASE_INPUT_VARIABLES = "variables";
+    static final String TEST_CASE_INPUT_VARIABLE_NAME = "name";
+    static final String TEST_CASE_INPUT_VARIABLE_VALUE = "value";
+    static final String TEST_CASE_INPUT_VARIABLE_TYPE = "type";
     static final String TEST_CASE_ASSERTIONS = "assertions";
     static final String TEST_CASE_ASSERTION_EQUALS = "assertEquals";
     static final String TEST_CASE_ASSERTION_NOTNULL = "assertNotNull";
