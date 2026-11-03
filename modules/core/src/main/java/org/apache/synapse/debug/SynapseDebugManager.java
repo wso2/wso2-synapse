@@ -45,6 +45,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.debug.constants.SynapseDebugCommandConstants;
@@ -61,6 +62,7 @@ import org.apache.synapse.debug.utils.InboundEndpointDebugUtil;
 import org.apache.synapse.debug.utils.ProxyDebugUtil;
 import org.apache.synapse.debug.utils.SequenceDebugUtil;
 import org.apache.synapse.debug.utils.TemplateDebugUtil;
+import org.apache.synapse.mediators.v2.Utils;
 import org.apache.synapse.transport.http.conn.SynapseBackEndWireLogs;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
@@ -1215,16 +1217,26 @@ public class SynapseDebugManager implements Observer {
             if (isActionSet) {
                 String propertyValue = property_arguments
                         .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_VALUE);
+                // Only the value can be edited from the debugger, so keep the type of the existing property
+                Object currentValue = getPropertyValue(propertyContext, propertyKey);
+                Object typedValue = castToExistingType(currentValue, propertyValue);
+                if (typedValue == null) {
+                    String msg = getInvalidValueMessage(currentValue, propertyValue);
+                    log.error("Failed to set property " + propertyKey + " in the scope " + propertyContext + " : "
+                            + msg);
+                    this.advertiseCommandResponse(createDebugCommandResponse(false, msg).toString());
+                    return;
+                }
                 if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT)
                         || propertyContext
                         .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE)) {
-                    synCtx.setProperty(propertyKey, propertyValue);
+                    synCtx.setProperty(propertyKey, typedValue);
 
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    setAxis2Property(propertyKey, propertyValue, axis2MessageCtx);
+                    setAxis2Property(propertyKey, typedValue, axis2MessageCtx);
                     if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equalsIgnoreCase(propertyKey)) {
                         setAxis2Property(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, propertyValue,
                                 axis2MessageCtx);
@@ -1241,7 +1253,7 @@ public class SynapseDebugManager implements Observer {
                                 && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    axis2MessageCtx.getOptions().setProperty(propertyKey, propertyValue);
+                    axis2MessageCtx.getOptions().setProperty(propertyKey, typedValue);
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
@@ -1261,7 +1273,7 @@ public class SynapseDebugManager implements Observer {
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
-                    axis2smc.getAxis2MessageContext().getOperationContext().setProperty(propertyKey, propertyValue);
+                    axis2smc.getAxis2MessageContext().getOperationContext().setProperty(propertyKey, typedValue);
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE) &&
                         synCtx instanceof Axis2MessageContext) {
                     try {
@@ -1395,11 +1407,12 @@ public class SynapseDebugManager implements Observer {
 
     private void validateJson(String payload) throws IOException {
 
-        JsonReader reader = new JsonReader(new StringReader(payload));
-        reader.setLenient(false);
-        new Gson().getAdapter(JsonElement.class).read(reader);
-        if (reader.peek() != JsonToken.END_DOCUMENT) {
-            throw new IOException("unexpected content after the end of the JSON payload");
+        try (JsonReader reader = new JsonReader(new StringReader(payload))) {
+            reader.setLenient(false);
+            new Gson().getAdapter(JsonElement.class).read(reader);
+            if (reader.peek() != JsonToken.END_DOCUMENT) {
+                throw new IOException("unexpected content after the end of the JSON payload");
+            }
         }
     }
 
@@ -1438,8 +1451,9 @@ public class SynapseDebugManager implements Observer {
         return builder.getDocumentElement();
     }
 
-    private void setAxis2Property(String propertyKey, String propertyValue,
+    private void setAxis2Property(String propertyKey, Object typedValue,
             org.apache.axis2.context.MessageContext axis2MessageCtx) {
+        String propertyValue = typedValue.toString();
         //Do not change the Envelope, SoapHeaders and Transport Headers
         switch (propertyKey) {
         case SynapseDebugCommandConstants.AXIS2_PROPERTY_TO:
@@ -1474,7 +1488,7 @@ public class SynapseDebugManager implements Observer {
             break;
         default:
             //MessageType, ContentType, ExcessTransportHeaders and other properties
-            axis2MessageCtx.setProperty(propertyKey, propertyValue);
+            axis2MessageCtx.setProperty(propertyKey, typedValue);
             Map<String, Set<String>> scopePropertiesMap;
             Set<String> axis2PropertyKeySet;
             String axis2MessageCtxKey = getAxis2MessagePropertiesKey(axis2MessageCtx);
@@ -1533,7 +1547,16 @@ public class SynapseDebugManager implements Observer {
             if (isActionSet) {
                 String variableValue = variableArguments
                         .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_VALUE);
-                synCtx.setVariable(variableName, variableValue);
+                // Only the value can be edited from the debugger, so keep the type of the existing variable
+                Object currentValue = synCtx.getVariable(variableName);
+                Object convertedValue = castToExistingType(currentValue, variableValue);
+                if (convertedValue == null) {
+                    String msg = getInvalidValueMessage(currentValue, variableValue);
+                    log.error("Failed to set variable " + variableName + " : " + msg);
+                    this.advertiseCommandResponse(createDebugCommandResponse(false, msg).toString());
+                    return;
+                }
+                synCtx.setVariable(variableName, convertedValue);
             } else {
                 Set variableKeySet = synCtx.getVariableKeySet();
                 if (variableKeySet != null) {
@@ -1548,5 +1571,83 @@ public class SynapseDebugManager implements Observer {
             return;
         }
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
+    }
+
+    /**
+     * Returns the current value of a property in the given scope, or null if the property is not set or the scope
+     * does not hold typed values.
+     */
+    private Object getPropertyValue(String propertyContext, String propertyKey) {
+
+        if (SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT.equals(propertyContext)
+                || SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE.equals(propertyContext)) {
+            return synCtx.getProperty(propertyKey);
+        }
+        org.apache.axis2.context.MessageContext axis2MessageCtx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2.equals(propertyContext)) {
+            return axis2MessageCtx.getProperty(propertyKey);
+        } else if (SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT.equals(propertyContext)) {
+            return axis2MessageCtx.getOptions().getProperty(propertyKey);
+        } else if (SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION.equals(propertyContext)
+                && axis2MessageCtx.getOperationContext() != null) {
+            return axis2MessageCtx.getOperationContext().getProperty(propertyKey);
+        }
+        return null;
+    }
+
+    /**
+     * Converts a value entered in the debugger to the type of the current value of the property or variable, so
+     * that editing the value does not change its type. Values of absent or other types are kept as strings.
+     *
+     * @param currentValue current value of the property or variable
+     * @param value        new value entered in the debugger
+     * @return the converted value, or null if the value cannot be converted to the type of the current value
+     */
+    private Object castToExistingType(Object currentValue, String value) {
+
+        try {
+            if (currentValue instanceof Boolean) {
+                if ("true".equalsIgnoreCase(value.trim())) {
+                    return Boolean.TRUE;
+                } else if ("false".equalsIgnoreCase(value.trim())) {
+                    return Boolean.FALSE;
+                }
+                return null;
+            } else if (currentValue instanceof Integer) {
+                return Integer.valueOf(value.trim());
+            } else if (currentValue instanceof Long) {
+                return Long.valueOf(value.trim());
+            } else if (currentValue instanceof Short) {
+                return Short.valueOf(value.trim());
+            } else if (currentValue instanceof Double) {
+                return Double.valueOf(value.trim());
+            } else if (currentValue instanceof Float) {
+                return Float.valueOf(value.trim());
+            } else if (currentValue instanceof JsonElement) {
+                return Utils.convertValue(value, XMLConfigConstants.VARIABLE_DATA_TYPES.JSON.name(), log);
+            } else if (currentValue instanceof OMElement) {
+                return Utils.convertValue(value, XMLConfigConstants.VARIABLE_DATA_TYPES.XML.name(), log);
+            }
+            return value;
+        } catch (NumberFormatException | SynapseException | OMException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to convert the value " + value + " to the type of " + currentValue, e);
+            }
+            return null;
+        }
+    }
+
+    private String getInvalidValueMessage(Object currentValue, String value) {
+
+        String typeName;
+        if (currentValue instanceof JsonElement) {
+            typeName = "json";
+        } else if (currentValue instanceof OMElement) {
+            typeName = "xml";
+        } else {
+            typeName = currentValue.getClass().getSimpleName().toLowerCase();
+        }
+        return "'" + value + "' is not a valid " + typeName + " value";
     }
 }

@@ -17,8 +17,11 @@
 package org.apache.synapse.debug;
 
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import junit.framework.TestCase;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNode;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
@@ -40,7 +43,6 @@ import org.apache.synapse.mediators.template.TemplateParam;
 import org.codehaus.jettison.json.JSONObject;
 
 import java.util.HashSet;
-import java.util.Iterator;
 
 public class DebugManagerTest extends TestCase {
     private static SynapseConfiguration synConfig;
@@ -754,14 +756,14 @@ public class DebugManagerTest extends TestCase {
         MessageContext mc = TestUtils.getTestContextJson("{\"name\":\"old\"}", null);
         setMessageType(mc, "application/json; charset=UTF-8");
         setPayload(mc, "{\"name\":\"new\",\"items\":[1,2]}");
-        assertEquals("{\"name\":\"new\",\"items\":[1,2]}", JsonUtil.jsonPayloadToString(getAxis2Context(mc)));
+        assertJsonPayload(mc, "{\"name\":\"new\",\"items\":[1,2]}");
     }
 
     public void testSetInvalidJsonPayloadKeepsPayload() throws Exception {
         MessageContext mc = TestUtils.getTestContextJson("{\"name\":\"old\"}", null);
         setMessageType(mc, "application/json");
         setPayload(mc, "{\"name\":");
-        assertEquals("{\"name\":\"old\"}", JsonUtil.jsonPayloadToString(getAxis2Context(mc)));
+        assertJsonPayload(mc, "{\"name\":\"old\"}");
     }
 
     public void testSetXmlPayloadReplacesBody() throws Exception {
@@ -796,6 +798,122 @@ public class DebugManagerTest extends TestCase {
         assertEquals("hello world", mc.getEnvelope().getBody().getFirstElement().getText());
     }
 
+    public void testSetVariableKeepsExistingType() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order/>");
+        mc.setVariable("count", 1);
+        setVariable(mc, "count", "5");
+        assertEquals(5, mc.getVariable("count"));
+        mc.setVariable("total", 1L);
+        setVariable(mc, "total", "5000000000");
+        assertEquals(5000000000L, mc.getVariable("total"));
+        mc.setVariable("price", 1.5d);
+        setVariable(mc, "price", "2.5");
+        assertEquals(2.5d, mc.getVariable("price"));
+        mc.setVariable("flag", false);
+        setVariable(mc, "flag", "true");
+        assertEquals(Boolean.TRUE, mc.getVariable("flag"));
+        mc.setVariable("obj", new JsonObject());
+        setVariable(mc, "obj", "{\"a\":1}");
+        assertEquals(1, ((JsonObject) mc.getVariable("obj")).get("a").getAsInt());
+        mc.setVariable("doc", TestUtils.createOMElement("<a/>"));
+        setVariable(mc, "doc", "<b>1</b>");
+        assertEquals("b", ((OMElement) mc.getVariable("doc")).getLocalName());
+        mc.setVariable("name", "x");
+        setVariable(mc, "name", "abc");
+        assertEquals("abc", mc.getVariable("name"));
+    }
+
+    public void testSetNewVariableAsString() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order/>");
+        setVariable(mc, "fresh", "5");
+        assertEquals("5", mc.getVariable("fresh"));
+    }
+
+    public void testSetInvalidVariableValueKeepsValue() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order/>");
+        mc.setVariable("count", 1);
+        setVariable(mc, "count", "abc");
+        assertEquals(1, mc.getVariable("count"));
+        OMElement doc = TestUtils.createOMElement("<a/>");
+        mc.setVariable("doc", doc);
+        setVariable(mc, "doc", "<a>");
+        assertSame(doc, mc.getVariable("doc"));
+    }
+
+    private void setVariable(MessageContext mc, String name, String value) throws Exception {
+        JSONObject variable = new JSONObject();
+        variable.put("variable-name", name);
+        variable.put("variable-value", value);
+        JSONObject command = new JSONObject();
+        command.put("command", "set");
+        command.put("command-argument", "variable");
+        command.put("variable", variable);
+        dm.setMessageContext(mc);
+        try {
+            dm.processDebugCommand(command.toString());
+        } finally {
+            dm.setMessageContext(null);
+        }
+    }
+
+    public void testSetPropertyKeepsExistingType() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order/>");
+        mc.setProperty("count", 1);
+        setProperty(mc, "default", "count", "5");
+        assertEquals(5, mc.getProperty("count"));
+        mc.setProperty("ratio", 1.5f);
+        setProperty(mc, "synapse", "ratio", "2.5");
+        assertEquals(2.5f, mc.getProperty("ratio"));
+        mc.setProperty("small", (short) 1);
+        setProperty(mc, "default", "small", "7");
+        assertEquals((short) 7, mc.getProperty("small"));
+        mc.setProperty("flag", true);
+        setProperty(mc, "default", "flag", "FALSE");
+        assertEquals(Boolean.FALSE, mc.getProperty("flag"));
+        mc.setProperty("doc", TestUtils.createOMElement("<a/>"));
+        setProperty(mc, "default", "doc", "<b>1</b>");
+        assertEquals("b", ((OMElement) mc.getProperty("doc")).getLocalName());
+        setProperty(mc, "default", "fresh", "5");
+        assertEquals("5", mc.getProperty("fresh"));
+
+        getAxis2Context(mc).setProperty("timeout", 10L);
+        setProperty(mc, "axis2", "timeout", "20");
+        assertEquals(20L, getAxis2Context(mc).getProperty("timeout"));
+        getAxis2Context(mc).getOptions().setProperty("retries", 1);
+        setProperty(mc, "axis2-client", "retries", "3");
+        assertEquals(3, getAxis2Context(mc).getOptions().getProperty("retries"));
+    }
+
+    public void testSetInvalidPropertyValueKeepsValue() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<order/>");
+        mc.setProperty("count", 1);
+        setProperty(mc, "default", "count", "ad");
+        assertEquals(1, mc.getProperty("count"));
+        mc.setProperty("flag", true);
+        setProperty(mc, "default", "flag", "yes");
+        assertEquals(Boolean.TRUE, mc.getProperty("flag"));
+        getAxis2Context(mc).setProperty("timeout", 10L);
+        setProperty(mc, "axis2", "timeout", "1.5");
+        assertEquals(10L, getAxis2Context(mc).getProperty("timeout"));
+    }
+
+    private void setProperty(MessageContext mc, String context, String name, String value) throws Exception {
+        JSONObject property = new JSONObject();
+        property.put("property-name", name);
+        property.put("property-value", value);
+        JSONObject command = new JSONObject();
+        command.put("command", "set");
+        command.put("command-argument", "property");
+        command.put("context", context);
+        command.put("property", property);
+        dm.setMessageContext(mc);
+        try {
+            dm.processDebugCommand(command.toString());
+        } finally {
+            dm.setMessageContext(null);
+        }
+    }
+
     private void setPayload(MessageContext mc, String payload) throws Exception {
         JSONObject property = new JSONObject();
         property.put("property-name", "Envelope");
@@ -813,6 +931,11 @@ public class DebugManagerTest extends TestCase {
         }
     }
 
+    private static void assertJsonPayload(MessageContext mc, String expected) {
+        assertEquals(JsonParser.parseString(expected),
+                JsonParser.parseString(JsonUtil.jsonPayloadToString(getAxis2Context(mc))));
+    }
+
     private static org.apache.axis2.context.MessageContext getAxis2Context(MessageContext mc) {
         return ((Axis2MessageContext) mc).getAxis2MessageContext();
     }
@@ -822,10 +945,12 @@ public class DebugManagerTest extends TestCase {
     }
 
     private static void assertBodyContainsOnly(MessageContext mc, String localName) {
-        Iterator children = mc.getEnvelope().getBody().getChildElements();
-        assertTrue(children.hasNext());
-        assertEquals(localName, ((OMElement) children.next()).getLocalName());
-        assertFalse(children.hasNext());
+        OMElement first = mc.getEnvelope().getBody().getFirstElement();
+        assertNotNull(first);
+        assertEquals(localName, first.getLocalName());
+        for (OMNode node = first.getNextOMSibling(); node != null; node = node.getNextOMSibling()) {
+            assertFalse("unexpected element in the SOAP body", node instanceof OMElement);
+        }
     }
 
 }
