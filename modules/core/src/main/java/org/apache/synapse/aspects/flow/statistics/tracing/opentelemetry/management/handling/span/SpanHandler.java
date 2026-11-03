@@ -157,6 +157,16 @@ public class SpanHandler implements OpenTelemetrySpanHandler {
         return openTelemetry.getPropagators().getTextMapPropagator().extract(Context.root(), carrier, getter);
     }
 
+    /**
+     * Sets the OpenTelemetry instance used by the static propagation helpers of this class, when another span handler
+     * implementation is in use.
+     *
+     * @param openTelemetry OpenTelemetry instance.
+     */
+    static void setOpenTelemetry(OpenTelemetry openTelemetry) {
+        SpanHandler.openTelemetry = openTelemetry;
+    }
+
     @Override
     public SpanStore getSpanStore(MessageContext messageContext) {
         return tracingScopeManager.getSpanStore(messageContext);

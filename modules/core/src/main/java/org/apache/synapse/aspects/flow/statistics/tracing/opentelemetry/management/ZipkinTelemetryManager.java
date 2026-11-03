@@ -31,8 +31,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.OpenTelemetrySpanHandler;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandler;
-import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.scoping.TracingScopeManager;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.handling.span.SpanHandlerFactory;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 public class ZipkinTelemetryManager implements OpenTelemetryManager {
@@ -41,7 +40,7 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
     private SdkTracerProvider sdkTracerProvider;
     private OpenTelemetry openTelemetry;
     private TelemetryTracer tracer;
-    private SpanHandler handler;
+    private OpenTelemetrySpanHandler handler;
 
     @Override
     public void init() {
@@ -83,7 +82,7 @@ public class ZipkinTelemetryManager implements OpenTelemetryManager {
         if (logger.isDebugEnabled()) {
             logger.debug("Tracer: " + this.tracer + " is configured");
         }
-        this.handler = new SpanHandler(tracer, openTelemetry, new TracingScopeManager());
+        this.handler = SpanHandlerFactory.createSpanHandler(tracer, openTelemetry);
     }
 
     @Override
