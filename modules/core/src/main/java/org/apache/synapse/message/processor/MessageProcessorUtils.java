@@ -19,6 +19,7 @@
 package org.apache.synapse.message.processor;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.TelemetryConstants;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.Set;
@@ -40,6 +41,7 @@ public class MessageProcessorUtils {
                 pros.remove(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX);
                 pros.remove(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
                 pros.remove(StatisticsConstants.MEDIATION_FLOW_STATISTICS_INDEXING_OBJECT);
+                pros.remove(TelemetryConstants.TRACING_SCOPE_PROPERTY);
             }
         }
     }

@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -86,6 +87,11 @@ public class SpanWrapper {
      * under that.
      */
     private Set<String> childStructuredElementIds;
+
+    /**
+     * Whether the span has been ended. Makes {@code SpanStore.finishSpan} idempotent.
+     */
+    private final AtomicBoolean finished = new AtomicBoolean(false);
 
     public SpanWrapper(String id, Span span, StatisticDataUnit openEventStatisticDataUnit, SpanWrapper parentSpanWrapper) {
         this.id = id;
@@ -159,4 +165,18 @@ public class SpanWrapper {
     public SpanWrapper getParentSpanWrapper() {
         return parentSpanWrapper;
     }
+
+    public boolean isFinished() {
+        return finished.get();
+    }
+
+    /**
+     * Marks the span as finished.
+     *
+     * @return {@code true} only for the first call, so exactly one caller finishes the span.
+     */
+    public boolean markFinished() {
+        return finished.compareAndSet(false, true);
+    }
+
 }
