@@ -88,12 +88,26 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         this.accesslog = LogFactory.getLog(LoggingUtils.ACCESS_LOG_ID);
         this.id = "http-outgoing-" + COUNT.incrementAndGet();
         this.original = session;
+        IOSession decorated = decorate(session);
+        if (decorated != session) {
+            super.bind(decorated);
+        }
+    }
+
+    /**
+     * Wraps the session with the wire-log session when I/O or wire logs (or the debugger) are enabled, and
+     * with the replay session when replay transactions are enabled. The replay session wraps the wire-log
+     * session, so both work together.
+     */
+    private IOSession decorate(final IOSession session) {
+        IOSession decorated = session;
         if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
-            super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
+            decorated = new LoggingIOSession(decorated, this.id, this.iolog, this.wirelog);
         }
         if (REPLAY_TXN_ENABLED) {
-            super.bind(new ReplayIOSession(session, this.id));
+            decorated = new ReplayIOSession(decorated, this.id);
         }
+        return decorated;
     }
 
     @Override
@@ -338,13 +352,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
     @Override
     public void bind(final IOSession session) {
         this.original = session;
-        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
-            super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
-        } if (REPLAY_TXN_ENABLED) {
-            super.bind(new ReplayIOSession(session, this.id));
-        } else {
-            super.bind(session);
-        }
+        super.bind(decorate(session));
     }
 
     @Override

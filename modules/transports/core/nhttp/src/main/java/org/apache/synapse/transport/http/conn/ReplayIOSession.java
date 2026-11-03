@@ -39,6 +39,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ReplayIOSession implements IOSession {
 
     private static AtomicLong COUNT = new AtomicLong(0);
+    // Number of times capturing a replay record failed, and how often such failures are logged at error level
+    private static final AtomicLong CAPTURE_FAILURE_COUNT = new AtomicLong(0);
+    private static final long CAPTURE_FAILURE_LOG_FREQUENCY = 1000;
+    private static final Log replayLog = LogFactory.getLog(ReplayIOSession.class);
     private final Log log;
     private final IOSession session;
     private final ByteChannel channel;
@@ -197,20 +201,48 @@ public class ReplayIOSession implements IOSession {
             if (log.isDebugEnabled()) {
                 log.debug("I/O session " + id + " " + session + ": " + byteWritten + " bytes written");
             }
+            // The data is already written to the backend at this point. Capturing it for replay is best effort and
+            // must never fail the backend call, so any error raised while capturing is logged and ignored.
+            try {
+                captureReplayRecord(src, byteWritten);
+            } catch (RuntimeException | LinkageError e) {
+                long failures = CAPTURE_FAILURE_COUNT.incrementAndGet();
+                if (failures == 1 || failures % CAPTURE_FAILURE_LOG_FREQUENCY == 0) {
+                    replayLog.error("Failed to capture replay record; the request is not affected. Failure count: "
+                            + failures, e);
+                } else if (replayLog.isDebugEnabled()) {
+                    replayLog.debug("Failed to capture replay record. Failure count: " + failures, e);
+                }
+            }
+            return byteWritten;
+        }
+
+        /**
+         * Copies the bytes just written to the backend and queues them for replay, if replay is enabled for the
+         * request that owns this connection.
+         *
+         * @param src         buffer that was written to the backend
+         * @param byteWritten number of bytes written from the buffer
+         */
+        private void captureReplayRecord(final ByteBuffer src, final int byteWritten) {
+            // Nothing was written, e.g. the socket buffer was full, so there is nothing to record
+            if (byteWritten <= 0) {
+                return;
+            }
             // Retrieve request context associated with this session
             Object request = session.getAttribute("CONNECTION_INFORMATION");
             if (!(request instanceof TargetContext)) {
                 log.warn("Unexpected connection type in session attribute: " + (request == null ?
                         "null" :
                         request.getClass()));
-                return byteWritten;
+                return;
             }
             // Extract the MessageContext from the target connection
             MessageContext mc = ((TargetContext) request).getRequestMsgCtx();
             // Skip recording for methods not in allowed write list
             String httpMethod = (String) mc.getProperty("HTTP_METHOD");
             if (!isAllowedWriteMethod(httpMethod)) {
-                return byteWritten;
+                return;
             }
             // Generate or fallback to UNKNOWN message ID for traceability
             String messageID = (mc.getMessageID() != null) ? mc.getMessageID() : "UNKNOWN";
@@ -222,7 +254,7 @@ public class ReplayIOSession implements IOSession {
                 if (log.isDebugEnabled()) {
                     log.debug("Replay transaction disabled for message ID: " + messageID);
                 }
-                return byteWritten;
+                return;
             }
             // Duplicate and segment ByteBuffer to isolate written data
             ByteBuffer copyBuffer = src.duplicate();
@@ -255,7 +287,6 @@ public class ReplayIOSession implements IOSession {
             }
             // Dispatch replay record for asynchronous persistence or processing
             ReplayDispatcher.getInstance().addReplayRecord(copyBuffer, byteWritten, messageID, metadata);
-            return byteWritten;
         }
 
         /**
