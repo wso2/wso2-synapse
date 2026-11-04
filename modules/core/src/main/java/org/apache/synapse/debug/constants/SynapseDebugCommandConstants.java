@@ -51,6 +51,7 @@ public class SynapseDebugCommandConstants {
     public static final String DEBUG_COMMAND_VARIABLE = "variable";
     public static final String DEBUG_COMMAND_VARIABLE_NAME = "variable-name";
     public static final String DEBUG_COMMAND_VARIABLE_VALUE = "variable-value";
+    public static final String DEBUG_COMMAND_VARIABLE_TYPE = "variable-type";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT = "context";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_ALL = "all";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2 = "axis2";

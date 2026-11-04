@@ -18,6 +18,8 @@ package org.apache.synapse.debug;
 
 
 import junit.framework.TestCase;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
@@ -794,6 +796,102 @@ public class DebugManagerTest extends TestCase {
         setPayload(mc, "hello world");
         assertBodyContainsOnly(mc, "text");
         assertEquals("hello world", mc.getEnvelope().getBody().getFirstElement().getText());
+    }
+
+    public void testSetVariableKeepsInteger() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<a/>");
+        mc.setVariable("quantity", 12);
+        setVariable(mc, "quantity", "50", null);
+        assertEquals(50, mc.getVariable("quantity"));
+    }
+
+    public void testSetVariableKeepsLongDoubleAndBoolean() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<a/>");
+        mc.setVariable("id", 1L);
+        mc.setVariable("price", 25.5);
+        mc.setVariable("express", true);
+        setVariable(mc, "id", "9000000000", null);
+        setVariable(mc, "price", "10.25", null);
+        setVariable(mc, "express", "FALSE", null);
+        assertEquals(9000000000L, mc.getVariable("id"));
+        assertEquals(10.25, mc.getVariable("price"));
+        assertEquals(Boolean.FALSE, mc.getVariable("express"));
+    }
+
+    public void testSetVariableKeepsJson() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<a/>");
+        mc.setVariable("customer", JsonParser.parseString("{\"name\":\"Alice\",\"tier\":\"gold\"}"));
+        setVariable(mc, "customer", "{\"name\":\"Bob\",\"tier\":\"silver\"}", null);
+        Object value = mc.getVariable("customer");
+        assertTrue(value instanceof JsonElement);
+        assertEquals("silver", ((JsonElement) value).getAsJsonObject().get("tier").getAsString());
+    }
+
+    public void testSetVariableKeepsJsonPrimitive() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<a/>");
+        mc.setVariable("flag", JsonParser.parseString("true"));
+        setVariable(mc, "flag", "false", null);
+        assertEquals(JsonParser.parseString("false"), mc.getVariable("flag"));
+    }
+
+    public void testSetVariableKeepsXml() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<a/>");
+        mc.setVariable("item", TestUtils.createOMElement("<item><sku>A</sku></item>"));
+        setVariable(mc, "item", "<item><sku>B</sku></item>", null);
+        Object value = mc.getVariable("item");
+        assertTrue(value instanceof OMElement);
+        assertEquals("B", ((OMElement) value).getFirstElement().getText());
+    }
+
+    public void testSetVariableRejectsInvalidValues() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<a/>");
+        JsonElement customer = JsonParser.parseString("{\"name\":\"Alice\"}");
+        mc.setVariable("quantity", 12);
+        mc.setVariable("express", true);
+        mc.setVariable("customer", customer);
+        setVariable(mc, "quantity", "abc", null);
+        setVariable(mc, "express", "yes", null);
+        setVariable(mc, "customer", "{\"name\":", null);
+        assertEquals(12, mc.getVariable("quantity"));
+        assertEquals(Boolean.TRUE, mc.getVariable("express"));
+        assertEquals(customer, mc.getVariable("customer"));
+    }
+
+    public void testSetVariableStringAndNewVariable() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<a/>");
+        mc.setVariable("orderId", "ORD-1");
+        setVariable(mc, "orderId", "ORD-2", null);
+        setVariable(mc, "newVar", "42", null);
+        assertEquals("ORD-2", mc.getVariable("orderId"));
+        assertEquals("42", mc.getVariable("newVar"));
+    }
+
+    public void testSetVariableWithExplicitType() throws Exception {
+        MessageContext mc = TestUtils.getTestContextWithAxis2("<a/>");
+        mc.setVariable("count", "5");
+        setVariable(mc, "count", "7", "integer");
+        setVariable(mc, "unknownType", "7", "NUMBER");
+        assertEquals(7, mc.getVariable("count"));
+        assertNull(mc.getVariable("unknownType"));
+    }
+
+    private void setVariable(MessageContext mc, String name, String value, String type) throws Exception {
+        JSONObject variable = new JSONObject();
+        variable.put("variable-name", name);
+        variable.put("variable-value", value);
+        if (type != null) {
+            variable.put("variable-type", type);
+        }
+        JSONObject command = new JSONObject();
+        command.put("command", "set");
+        command.put("command-argument", "variable");
+        command.put("variable", variable);
+        dm.setMessageContext(mc);
+        try {
+            dm.processDebugCommand(command.toString());
+        } finally {
+            dm.setMessageContext(null);
+        }
     }
 
     private void setPayload(MessageContext mc, String payload) throws Exception {

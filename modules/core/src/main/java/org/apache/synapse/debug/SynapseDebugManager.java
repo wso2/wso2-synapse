@@ -34,6 +34,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import org.apache.commons.io.IOUtils;
@@ -45,6 +46,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.debug.constants.SynapseDebugCommandConstants;
@@ -1522,6 +1524,10 @@ public class SynapseDebugManager implements Observer {
 
     /**
      * This method is used to add or remove a variable in the mediation flow point.
+     * <p>
+     * When setting a variable, the value is converted to the type of the variable's current value, so that a JSON,
+     * XML, numeric or boolean variable keeps its type. The optional "variable-type" argument overrides the type
+     * (one of the Variable mediator types). A new variable is set as a string unless a type is given.
      *
      * @param variableArguments
      * @param isActionSet
@@ -1533,7 +1539,25 @@ public class SynapseDebugManager implements Observer {
             if (isActionSet) {
                 String variableValue = variableArguments
                         .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_VALUE);
-                synCtx.setVariable(variableName, variableValue);
+                Object typedValue;
+                try {
+                    XMLConfigConstants.VARIABLE_DATA_TYPES type;
+                    if (variableArguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_TYPE)) {
+                        String typeName = variableArguments
+                                .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_VARIABLE_TYPE);
+                        type = getVariableType(typeName);
+                    } else {
+                        type = getVariableType(synCtx.getVariable(variableName));
+                    }
+                    typedValue = convertVariableValue(variableValue, type);
+                } catch (SynapseException e) {
+                    log.error("Failed to set the variable " + variableName, e);
+                    this.advertiseCommandResponse(createDebugCommandResponse(false,
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_VARIABLE + " : "
+                                    + e.getMessage()).toString());
+                    return;
+                }
+                synCtx.setVariable(variableName, typedValue);
             } else {
                 Set variableKeySet = synCtx.getVariableKeySet();
                 if (variableKeySet != null) {
@@ -1548,5 +1572,76 @@ public class SynapseDebugManager implements Observer {
             return;
         }
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
+    }
+
+    private XMLConfigConstants.VARIABLE_DATA_TYPES getVariableType(String typeName) {
+
+        try {
+            return XMLConfigConstants.VARIABLE_DATA_TYPES.valueOf(typeName.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new SynapseException("unknown variable type " + typeName, e);
+        }
+    }
+
+    /**
+     * Returns the Variable mediator type of an existing variable value. Values of other types, and variables that
+     * do not exist yet, are treated as strings.
+     */
+    private XMLConfigConstants.VARIABLE_DATA_TYPES getVariableType(Object currentValue) {
+
+        if (currentValue instanceof JsonElement) {
+            return XMLConfigConstants.VARIABLE_DATA_TYPES.JSON;
+        } else if (currentValue instanceof OMElement) {
+            return XMLConfigConstants.VARIABLE_DATA_TYPES.XML;
+        } else if (currentValue instanceof Integer) {
+            return XMLConfigConstants.VARIABLE_DATA_TYPES.INTEGER;
+        } else if (currentValue instanceof Long) {
+            return XMLConfigConstants.VARIABLE_DATA_TYPES.LONG;
+        } else if (currentValue instanceof Double) {
+            return XMLConfigConstants.VARIABLE_DATA_TYPES.DOUBLE;
+        } else if (currentValue instanceof Boolean) {
+            return XMLConfigConstants.VARIABLE_DATA_TYPES.BOOLEAN;
+        }
+        return XMLConfigConstants.VARIABLE_DATA_TYPES.STRING;
+    }
+
+    /**
+     * Converts a value entered in the debugger to the given variable type. Unlike the Variable mediator, invalid
+     * input is rejected instead of being converted leniently, so that a typo does not silently change a value.
+     */
+    private Object convertVariableValue(String value, XMLConfigConstants.VARIABLE_DATA_TYPES type) {
+
+        try {
+            switch (type) {
+                case JSON:
+                    validateJson(value);
+                    return JsonParser.parseString(value);
+                case XML:
+                    OMElement element = convertStringToOM(value);
+                    element.build();
+                    return element;
+                case INTEGER:
+                    return Integer.parseInt(value.trim());
+                case LONG:
+                    return Long.parseLong(value.trim());
+                case DOUBLE:
+                    return Double.parseDouble(value.trim());
+                case BOOLEAN:
+                    if ("true".equalsIgnoreCase(value.trim())) {
+                        return Boolean.TRUE;
+                    } else if ("false".equalsIgnoreCase(value.trim())) {
+                        return Boolean.FALSE;
+                    }
+                    throw new SynapseException("invalid BOOLEAN value " + value);
+                default:
+                    return value;
+            }
+        } catch (NumberFormatException e) {
+            throw new SynapseException("invalid " + type + " value " + value, e);
+        } catch (IOException e) {
+            throw new SynapseException("invalid JSON value", e);
+        } catch (XMLStreamException | OMException e) {
+            throw new SynapseException("invalid XML value", e);
+        }
     }
 }
