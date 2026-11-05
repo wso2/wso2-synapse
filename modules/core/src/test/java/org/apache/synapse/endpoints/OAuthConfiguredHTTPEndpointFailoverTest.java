@@ -63,6 +63,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
 
     private Axis2SynapseEnvironment synapseEnvironment;
 
+    /**
+     * Creates a mocked Synapse environment that the endpoints and cloned message contexts use.
+     */
     @Before
     public void setUp() throws AxisFault {
 
@@ -82,6 +85,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         });
     }
 
+    /**
+     * A token failure in the only child of a failover endpoint fails the request once.
+     */
     @Test
     public void testTokenFailureInSingleFailoverChildIsNotRetried() throws Exception {
 
@@ -92,6 +98,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         assertTokenFailureFailsOnce(failover, tokenCalls, 1);
     }
 
+    /**
+     * A token failure in the first child of a failover endpoint fails the request once without trying the second child.
+     */
     @Test
     public void testTokenFailureInTwoFailoverChildrenIsNotRetried() throws Exception {
 
@@ -105,6 +114,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         Assert.assertEquals("The sibling endpoint must not be tried on a token failure", 0, secondTokenCalls.get());
     }
 
+    /**
+     * A token failure in the only child of a load balance endpoint fails the request once.
+     */
     @Test
     public void testTokenFailureInSingleLoadbalanceChildIsNotRetried() throws Exception {
 
@@ -115,6 +127,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         assertTokenFailureFailsOnce(loadbalance, tokenCalls, 1);
     }
 
+    /**
+     * A token failure in the selected child of a load balance endpoint fails the request once.
+     */
     @Test
     public void testTokenFailureInTwoLoadbalanceChildrenIsNotRetried() throws Exception {
 
@@ -174,6 +189,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         assertTokenFailureFailsOnce(outer, tokenCalls, 1);
     }
 
+    /**
+     * isRetry returns false for an endpoint authentication failure and the default decision for other error codes.
+     */
     @Test
     public void testIsRetryForAuthAndNonAuthErrorCodes() throws Exception {
 
@@ -191,6 +209,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         Assert.assertTrue(endpoint.isRetry(synCtx));
     }
 
+    /**
+     * A transport fault in an OAuth child of a failover endpoint still fails over to the next child.
+     */
     @Test
     public void testTransportFaultInFailoverChildStillFailsOver() throws Exception {
 
@@ -203,6 +224,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         assertTransportFaultFailsOver(failover, child1, handler1, handler2, null);
     }
 
+    /**
+     * A transport fault in an OAuth child of a load balance endpoint still fails over to the next child.
+     */
     @Test
     public void testTransportFaultInLoadbalanceChildStillFailsOver() throws Exception {
 
@@ -215,6 +239,10 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         assertTransportFaultFailsOver(loadbalance, child1, handler1, handler2, null);
     }
 
+    /**
+     * An authentication error code left on the message from an earlier failure does not block failover on a later
+     * transport fault.
+     */
     @Test
     public void testStaleAuthErrorCodeDoesNotBlockFailoverOnTransportFault() throws Exception {
 
@@ -227,6 +255,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         assertTransportFaultFailsOver(failover, child1, handler1, handler2, SynapseConstants.ENDPOINT_AUTH_FAILURE);
     }
 
+    /**
+     * A token failure in a standalone OAuth endpoint sets the same error properties as before.
+     */
     @Test
     public void testStandaloneTokenFailureIsUnchanged() throws Exception {
 
@@ -250,6 +281,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         Assert.assertEquals(expectedMessage, synCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
     }
 
+    /**
+     * A token failure while retrying with a new token under a failover endpoint is not retried.
+     */
     @Test
     public void testTokenFailureOnRetryWithNewTokenUnderFailoverIsNotRetried() throws Exception {
 
@@ -290,6 +324,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         assertTokenError(synCtx);
     }
 
+    /**
+     * A failure to clone the message for a token retry under a failover endpoint fails the request once.
+     */
     @Test
     public void testCloneFailureUnderFailoverIsNotRetried() throws Exception {
 
@@ -328,6 +365,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
                 .startsWith("Error cloning the message context for oauth configured http endpoint child1."));
     }
 
+    /**
+     * An endpoint authentication failure is not retried even when its code is listed in the retry enabled error codes.
+     */
     @Test
     public void testIsRetryAuthFailureIgnoresRetryEnabledErrorCodes() throws Exception {
 
@@ -348,6 +388,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         Assert.assertFalse(endpoint.isRetry(synCtx));
     }
 
+    /**
+     * Retry disabled error codes are still honoured for errors other than an endpoint authentication failure.
+     */
     @Test
     public void testIsRetryHonoursRetryDisabledErrorCodes() throws Exception {
 
@@ -362,6 +405,10 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         Assert.assertTrue(endpoint.isRetry(synCtx));
     }
 
+    /**
+     * After a token failure under a failover endpoint, the child error is kept, the child is not suspended and the next
+     * request is sent.
+     */
     @Test
     public void testTokenFailureUnderFailoverKeepsChildErrorAndDoesNotSuspendChild() throws Exception {
 
@@ -413,6 +460,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         Mockito.verify(secondFaultHandler, Mockito.never()).handleFault(secondCtx);
     }
 
+    /**
+     * A token failure under a load balance endpoint with failover disabled fails the request once.
+     */
     @Test
     public void testTokenFailureInLoadbalanceWithoutFailoverFailsOnce() throws Exception {
 
@@ -480,6 +530,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         Mockito.verify(faultHandler, Mockito.never()).handleFault(synCtx);
     }
 
+    /**
+     * Asserts that the message carries the endpoint authentication failure code and the token error message.
+     */
     private void assertTokenError(MessageContext synCtx) {
 
         Assert.assertEquals(SynapseConstants.ENDPOINT_AUTH_FAILURE, synCtx.getProperty(SynapseConstants.ERROR_CODE));
@@ -489,6 +542,10 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
                 errorMessage.toString().startsWith(TOKEN_ERROR_PREFIX));
     }
 
+    /**
+     * Creates an OAuth handler whose token request always fails, counting the calls and failing the test if they are
+     * not bounded.
+     */
     private OAuthHandler failingTokenHandler(AtomicInteger tokenCalls) throws AuthException {
 
         OAuthHandler handler = Mockito.mock(OAuthHandler.class);
@@ -506,6 +563,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         return handler;
     }
 
+    /**
+     * Creates an OAuth configured HTTP endpoint with the given name and handler.
+     */
     private OAuthConfiguredHTTPEndpoint createEndpoint(String name, OAuthHandler handler) {
 
         OAuthConfiguredHTTPEndpoint endpoint = new OAuthConfiguredHTTPEndpoint(handler);
@@ -517,6 +577,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         return endpoint;
     }
 
+    /**
+     * Creates a failover endpoint with the given children.
+     */
     private FailoverEndpoint createFailover(Endpoint... children) {
 
         FailoverEndpoint failover = new FailoverEndpoint();
@@ -525,6 +588,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         return failover;
     }
 
+    /**
+     * Creates a round robin load balance endpoint with failover enabled and the given children.
+     */
     private LoadbalanceEndpoint createLoadbalance(Endpoint... children) {
 
         LoadbalanceEndpoint loadbalance = new LoadbalanceEndpoint();
@@ -536,6 +602,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         return loadbalance;
     }
 
+    /**
+     * Sets the given parent on each child endpoint and returns them as a list.
+     */
     private List<Endpoint> toChildren(Endpoint parent, Endpoint... children) {
 
         List<Endpoint> childList = new ArrayList<>(Arrays.asList(children));
@@ -545,6 +614,9 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         return childList;
     }
 
+    /**
+     * Creates a Synapse message context with an empty SOAP envelope.
+     */
     private MessageContext createMessageContext() throws AxisFault {
 
         org.apache.axis2.context.MessageContext axis2MC = new org.apache.axis2.context.MessageContext();
