@@ -127,6 +127,53 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         assertTokenFailureFailsOnce(loadbalance, tokenCalls, 1);
     }
 
+    /**
+     * A failover endpoint nested in another failover endpoint must not be retried by the outer endpoint when its
+     * OAuth child fails to get a token, and the outer endpoint's other child must not be tried.
+     */
+    @Test
+    public void testTokenFailureInNestedFailoverIsNotRetried() throws Exception {
+
+        AtomicInteger tokenCalls = new AtomicInteger();
+        AtomicInteger siblingTokenCalls = new AtomicInteger();
+        FailoverEndpoint inner = createFailover(createEndpoint("child1", failingTokenHandler(tokenCalls)));
+        inner.setName("innerFailoverEP");
+        OAuthConfiguredHTTPEndpoint sibling = createEndpoint("child2", failingTokenHandler(siblingTokenCalls));
+        FailoverEndpoint outer = createFailover(inner, sibling);
+
+        assertTokenFailureFailsOnce(outer, tokenCalls, 1);
+        Assert.assertEquals("The outer sibling endpoint must not be tried on a token failure", 0,
+                siblingTokenCalls.get());
+    }
+
+    /**
+     * A load balance endpoint nested in a failover endpoint must not be retried by the failover endpoint when its
+     * OAuth child fails to get a token.
+     */
+    @Test
+    public void testTokenFailureInLoadbalanceNestedInFailoverIsNotRetried() throws Exception {
+
+        AtomicInteger tokenCalls = new AtomicInteger();
+        LoadbalanceEndpoint inner = createLoadbalance(createEndpoint("child1", failingTokenHandler(tokenCalls)));
+        FailoverEndpoint outer = createFailover(inner);
+
+        assertTokenFailureFailsOnce(outer, tokenCalls, 1);
+    }
+
+    /**
+     * A failover endpoint nested in a load balance endpoint must not be retried by the load balance endpoint when
+     * its OAuth child fails to get a token.
+     */
+    @Test
+    public void testTokenFailureInFailoverNestedInLoadbalanceIsNotRetried() throws Exception {
+
+        AtomicInteger tokenCalls = new AtomicInteger();
+        FailoverEndpoint inner = createFailover(createEndpoint("child1", failingTokenHandler(tokenCalls)));
+        LoadbalanceEndpoint outer = createLoadbalance(inner);
+
+        assertTokenFailureFailsOnce(outer, tokenCalls, 1);
+    }
+
     @Test
     public void testIsRetryForAuthAndNonAuthErrorCodes() throws Exception {
 

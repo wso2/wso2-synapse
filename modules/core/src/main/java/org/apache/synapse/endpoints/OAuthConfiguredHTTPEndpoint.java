@@ -159,8 +159,7 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
     @Override
     protected boolean isRetry(MessageContext synCtx) {
 
-        Object errorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
-        if (errorCode instanceof Integer && (Integer) errorCode == SynapseConstants.ENDPOINT_AUTH_FAILURE) {
+        if (isEndpointAuthFailure(synCtx)) {
             if (log.isDebugEnabled()) {
                 log.debug("Endpoint authentication failure in endpoint : " + this.getName()
                         + ". The message will not be retried.");

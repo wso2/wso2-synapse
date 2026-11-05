@@ -355,7 +355,10 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         logOnChildEndpointFail(endpoint, synMessageContext);
         // resend (to a different endpoint) only if we support failover
         if (failover) {
-            if (((AbstractEndpoint)endpoint).isRetry(synMessageContext)) {
+            // An authentication failure is not retried, even when the failed child is itself a failover or
+            // load balance endpoint whose isRetry does not check for it
+            if (!isEndpointAuthFailure(synMessageContext)
+                    && ((AbstractEndpoint)endpoint).isRetry(synMessageContext)) {
                 if (log.isDebugEnabled()) {
                     log.debug(this + " Retry Attempt for Request with [Message ID : " +
                             synMessageContext.getMessageID() + "], [To : " +

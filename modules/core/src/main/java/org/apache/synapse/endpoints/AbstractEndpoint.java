@@ -500,6 +500,19 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         return false;
     }
 
+    /**
+     * Checks whether the current failure is an endpoint authentication failure, such as a failed OAuth token
+     * request. A parent (failover / load balance) endpoint must not retry such a failure, because resending
+     * selects an endpoint that fails the same way again, with no bound.
+     *
+     * @param synCtx Synapse MessageContext of the failed message
+     * @return true if the error code on the message is an endpoint authentication failure
+     */
+    protected boolean isEndpointAuthFailure(MessageContext synCtx) {
+
+        Object errorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
+        return errorCode instanceof Integer && (Integer) errorCode == SynapseConstants.ENDPOINT_AUTH_FAILURE;
+    }
 
     protected boolean isRetry(MessageContext synCtx) {
         Integer errorCode = (Integer) synCtx.getProperty(SynapseConstants.ERROR_CODE);
