@@ -26,6 +26,7 @@ import org.apache.http.HttpResponseFactory;
 import org.apache.http.impl.nio.DefaultNHttpClientConnection;
 import org.apache.http.impl.nio.DefaultNHttpServerConnection;
 import org.apache.http.nio.NHttpClientEventHandler;
+import org.apache.http.nio.NHttpConnection;
 import org.apache.http.nio.NHttpServerEventHandler;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.util.ByteBufferAllocator;
@@ -93,4 +94,17 @@ public class LoggingUtils {
                 params);
     }
 
+    /**
+     * Queues the combined access log entry held by the connection, if any. Called once the response body has
+     * been completely written (server) or read (client), or when the response has no body.
+     *
+     * @param conn - source or target connection
+     */
+    public static void logPendingCombinedAccess(NHttpConnection conn) {
+        if (conn instanceof LoggingNHttpServerConnection) {
+            ((LoggingNHttpServerConnection) conn).logPendingCombinedAccess();
+        } else if (conn instanceof LoggingNHttpClientConnection) {
+            ((LoggingNHttpClientConnection) conn).logPendingCombinedAccess();
+        }
+    }
 }

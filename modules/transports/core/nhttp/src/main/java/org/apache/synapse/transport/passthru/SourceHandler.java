@@ -48,8 +48,11 @@ import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
+import org.apache.synapse.transport.http.access.Access;
+import org.apache.synapse.transport.http.access.AccessConstants;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
+import org.apache.synapse.transport.http.conn.LoggingUtils;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
@@ -463,6 +466,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             if (readBytes > 0) {
                 metrics.incrementBytesReceived(readBytes);
+                Access.incrementBodyBytes(conn.getHttpRequest(), AccessConstants.HTTP_REQUEST_BODY_BYTES, readBytes);
             }
         } catch (IOException e) {
             ProtocolState protocolState = SourceContext.getState(conn);
@@ -641,11 +645,14 @@ public class SourceHandler implements NHttpServerEventHandler {
                   if (metrics != null && bytesWritten > 0) {
                       metrics.incrementBytesSent(bytesWritten);
                   }
+                Access.incrementBodyBytes(conn.getHttpResponse(), AccessConstants.HTTP_RESPONSE_BODY_BYTES,
+                        bytesWritten);
                 
                   conn.requestInput();
                   if(outBuf instanceof SimpleOutputBuffer && !((SimpleOutputBuffer)outBuf).hasData()){
                       sourceConfiguration.getSourceConnections().releaseConnection(conn);
                   }
+                LoggingUtils.logPendingCombinedAccess(conn);
                   endTransaction(conn);
                 return;
             }
@@ -658,6 +665,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                         "are happening for the same request");
 
                 handleInvalidState(conn, "Trying to write response body");
+                LoggingUtils.logPendingCombinedAccess(conn);
                 endTransaction(conn);
                 return;
             }
@@ -699,6 +707,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             } else {
                 bytesSent = response.write(conn, encoder);
             }
+            Access.incrementBodyBytes(conn.getHttpResponse(), AccessConstants.HTTP_RESPONSE_BODY_BYTES, bytesSent);
             long chunkWriteEndTime = 0L;
             if (transportLatencyLog.isTraceEnabled()) {
                 chunkWriteEndTime = System.currentTimeMillis();
@@ -730,6 +739,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                     logCorrelationRoundTrip(context, request);
                 }
                 updateMetricsView(context);
+                LoggingUtils.logPendingCombinedAccess(conn);
             }
             endTransaction(conn);
             metrics.incrementBytesSent(bytesSent);

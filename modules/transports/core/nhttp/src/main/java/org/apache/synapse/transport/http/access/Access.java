@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The class to handle the HTTP Access Logs, patterns and the major functionality.
@@ -71,6 +72,24 @@ public class Access {
         RequestResponsePair(HttpRequestWrapper req, HttpResponseWrapper res) {
             this.request = req;
             this.response = res;
+        }
+    }
+
+    /**
+     * A request+response pair whose combined access log entry is held back until the response body
+     * has been fully transferred, so that the body byte count is complete when the entry is queued.
+     */
+    public static final class PendingCombinedAccess {
+        private final HttpRequest request;
+        private final HttpResponse response;
+
+        public PendingCombinedAccess(HttpRequest request, HttpResponse response) {
+            this.request = request;
+            this.response = response;
+        }
+
+        public void addToQueue() {
+            AccessHandler.getAccess().addCombinedAccessToQueue(request, response);
         }
     }
 
@@ -130,7 +149,10 @@ public class Access {
 
         HttpResponseWrapper responseWrapper = null;
         if (response != null) {
-            long responseTimeMs = System.currentTimeMillis();
+            // Keep the time the response head was transferred, if it was recorded, as queueing may be
+            // deferred until the response body is complete
+            Object resTimeMs = response.getParams().getParameter(AccessConstants.HTTP_RESPONSE_TIME_MS);
+            long responseTimeMs = resTimeMs instanceof Long ? (Long) resTimeMs : System.currentTimeMillis();
             response.getParams().setParameter(AccessConstants.HTTP_RESPONSE_TIME_MS, responseTimeMs);
             responseWrapper = new HttpResponseWrapper();
             responseWrapper.setHttpResponse(response);
@@ -141,6 +163,32 @@ public class Access {
             Object correlationId = request.getParams().getParameter(CorrelationConstants.CORRELATION_ID);
             log.warn("Combined access log queue is full, dropping entry. correlation_id=" + correlationId);
         }
+    }
+
+    /**
+     * Adds the given number of body bytes to the counter kept in the message params. Used to calculate
+     * the message size when it is not available in the Content-Length header (e.g. chunked messages).
+     *
+     * @param message   - HttpRequest or HttpResponse whose body bytes were transferred
+     * @param paramName - HTTP_REQUEST_BODY_BYTES or HTTP_RESPONSE_BODY_BYTES
+     * @param bytes     - number of body bytes transferred
+     */
+    public static void incrementBodyBytes(HttpMessage message, String paramName, long bytes) {
+        if (!AccessConstants.isV2LoggingEnabled() || message == null || bytes <= 0) {
+            return;
+        }
+        HttpParams params = message.getParams();
+        Object counter = params.getParameter(paramName);
+        if (counter instanceof AtomicLong) {
+            ((AtomicLong) counter).addAndGet(bytes);
+        } else {
+            params.setParameter(paramName, new AtomicLong(bytes));
+        }
+    }
+
+    private static long getBodyBytes(HttpMessage message, String paramName) {
+        Object bytes = message.getParams().getParameter(paramName);
+        return bytes instanceof Number ? ((Number) bytes).longValue() : -1;
     }
 
     /**
@@ -545,8 +593,11 @@ public class Access {
             try {
                 if (request != null) {
                     String sLength = getHeaderValues(request, HEADER_CONTENT_LENGTH);
-                    if(null != sLength && !"".equals(sLength)) {
+                    if (StringUtils.isNotBlank(sLength) && !"-".equals(sLength)) {
                         length = Long.valueOf(sLength);
+                    } else {
+                        // No Content-Length header (e.g. chunked), use the body bytes actually read/written
+                        length = getBodyBytes(request, AccessConstants.HTTP_REQUEST_BODY_BYTES);
                     }
                 } else if (response != null) {
                     length = response.getEntity().getContentLength(); //getBytesWritten(false);
@@ -569,7 +620,19 @@ public class Access {
     protected static class ResponseByteSentElement implements AccessLogElement {
         public void addElement(StringBuilder buf, Date date, HttpRequest request,
                                HttpResponse response) {
-            buf.append(response != null ? getContentLengthHeader(response) : "-");
+            if (response == null) {
+                buf.append('-');
+                return;
+            }
+            String length = getContentLengthHeader(response);
+            if ("-".equals(length)) {
+                // No Content-Length header (e.g. chunked), use the body bytes actually read/written
+                long bodyBytes = getBodyBytes(response, AccessConstants.HTTP_RESPONSE_BODY_BYTES);
+                if (bodyBytes >= 0) {
+                    length = String.valueOf(bodyBytes);
+                }
+            }
+            buf.append(length);
         }
     }
 

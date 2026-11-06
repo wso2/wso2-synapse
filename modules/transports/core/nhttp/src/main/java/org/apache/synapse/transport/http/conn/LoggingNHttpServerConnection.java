@@ -49,6 +49,7 @@ import org.apache.http.nio.reactor.SessionOutputBuffer;
 import org.apache.http.nio.util.ByteBufferAllocator;
 import org.apache.http.params.HttpParams;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.transport.http.access.Access;
 import org.apache.synapse.transport.http.access.AccessConstants;
 import org.apache.synapse.transport.http.access.AccessHandler;
 
@@ -66,6 +67,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
 
     private IOSession original;
     private final AtomicReference<HttpRequest> pendingAccessLogRequest = new AtomicReference<>();
+    private final AtomicReference<Access.PendingCombinedAccess> pendingCombinedAccess = new AtomicReference<>();
 
     public LoggingNHttpServerConnection(
             final IOSession session,
@@ -90,6 +92,7 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Close connection");
         }
+        logPendingCombinedAccess();
         logPendingRequestOnConnectionEnd();
         super.close();
     }
@@ -99,8 +102,20 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Shutdown connection");
         }
+        logPendingCombinedAccess();
         logPendingRequestOnConnectionEnd();
         super.shutdown();
+    }
+
+    /**
+     * Queues the combined access log entry held back in {@link LoggingNHttpMessageWriter#write}. Called once
+     * the response body has been completely written, or when the connection is closed.
+     */
+    public void logPendingCombinedAccess() {
+        Access.PendingCombinedAccess pending = pendingCombinedAccess.getAndSet(null);
+        if (pending != null) {
+            pending.addToQueue();
+        }
     }
 
     private void logPendingRequestOnConnectionEnd() {
@@ -405,7 +420,14 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
                             if (correlationId != null) {
                                 reqParams.setParameter(CorrelationConstants.CORRELATION_ID, correlationId.toString());
                             }
-                            AccessHandler.getAccess().addCombinedAccessToQueue(request, response);
+                            params.setParameter(AccessConstants.HTTP_RESPONSE_TIME_MS, System.currentTimeMillis());
+                            if (response.getEntity() == null) {
+                                AccessHandler.getAccess().addCombinedAccessToQueue(request, response);
+                            } else {
+                                // Queued once the body is written (encoder completed in the handler's
+                                // outputReady), so that the response body bytes are included
+                                pendingCombinedAccess.set(new Access.PendingCombinedAccess(request, response));
+                            }
                         }
                     }
                 } else {
