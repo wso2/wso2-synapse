@@ -183,7 +183,7 @@ public class SpanStore {
      * @param isError     finishing the span with an error
      */
     public void finishSpan(SpanWrapper spanWrapper, MessageContext synCtx, boolean isError) {
-        if (spanWrapper != null && spanWrapper.getSpan() != null) {
+        if (spanWrapper != null && spanWrapper.getSpan() != null && spanWrapper.markFinished()) {
             if (spanWrapper.getStatisticDataUnit() != null) {
                 SpanTagger.setSpanTags(spanWrapper, synCtx);
             }
