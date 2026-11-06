@@ -141,7 +141,32 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
 
         String errorMsg = message + " " + exception.getMessage();
         log.error(errorMsg);
+        // Set the error and mark this endpoint as the last endpoint, as a normal send would, so that a parent
+        // endpoint's informFailure keeps this error code and message instead of overwriting them.
+        setErrorOnMessage(synCtx, SynapseConstants.ENDPOINT_AUTH_FAILURE, errorMsg);
+        synCtx.setProperty(SynapseConstants.LAST_ENDPOINT, this);
         informFailure(synCtx, SynapseConstants.ENDPOINT_AUTH_FAILURE, errorMsg);
+    }
+
+    /**
+     * A token failure happens before the message reaches the transport, so this endpoint is never suspended and
+     * stays ready to send. Retrying from a parent (failover / load balance) endpoint would select this same
+     * endpoint again with no bound, so token failures are not retried.
+     *
+     * @param synCtx Synapse MessageContext of the failed message
+     * @return false for an endpoint authentication failure, otherwise the default retry decision
+     */
+    @Override
+    protected boolean isRetry(MessageContext synCtx) {
+
+        if (isEndpointAuthFailure(synCtx)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Endpoint authentication failure in endpoint : " + this.getName()
+                        + ". The message will not be retried.");
+            }
+            return false;
+        }
+        return super.isRetry(synCtx);
     }
 
     private void setResolvedUrlTemplate(MessageContext messageContext) {
