@@ -904,6 +904,51 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
+     * Quotes a string as a JSON string, escaping quotes, backslashes and control characters.
+     *
+     * @param value string to quote
+     * @return the value as a JSON string literal
+     */
+    private static String toJsonString(String value) {
+        StringBuilder json = new StringBuilder(value.length() + 2);
+        json.append('"');
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '"':
+                    json.append("\\\"");
+                    break;
+                case '\\':
+                    json.append("\\\\");
+                    break;
+                case '\b':
+                    json.append("\\b");
+                    break;
+                case '\f':
+                    json.append("\\f");
+                    break;
+                case '\n':
+                    json.append("\\n");
+                    break;
+                case '\r':
+                    json.append("\\r");
+                    break;
+                case '\t':
+                    json.append("\\t");
+                    break;
+                default:
+                    if (c < 0x20) {
+                        json.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        json.append(c);
+                    }
+            }
+        }
+        json.append('"');
+        return json.toString();
+    }
+
+    /**
      * Serialize json payload.
      *
      * @param obj Json object which required to be serialized
@@ -927,7 +972,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
                 } else {
                     first = false;
                 }
-                json.append("\"").append(key).append("\" : ").append(serializeJSON(value));
+                json.append(toJsonString(key)).append(" : ").append(serializeJSON(value));
             }
             json.append("}");
         } else if (obj instanceof NativeArray) {
@@ -959,7 +1004,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
             json.append("]");
 
         } else if (obj instanceof String) {
-            json.append("\"").append(obj.toString()).append("\"");
+            json.append(toJsonString(obj.toString()));
         } else if (obj instanceof Integer ||
                 obj instanceof Long ||
                 obj instanceof Float ||
@@ -1040,9 +1085,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
                 } else {
                     first = false;
                 }
-                out.write('"');
-                out.write(key.getBytes());
-                out.write('"');
+                out.write(toJsonString(key).getBytes());
                 out.write(':');
                 serializeJson(value, out);
             }
@@ -1077,15 +1120,11 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
             }
             out.write(']');
         } else if (obj instanceof String) {
-            out.write('"');
-            out.write(((String) obj).getBytes());
-            out.write('"');
+            out.write(toJsonString((String) obj).getBytes());
         } else if (obj instanceof ConsString) {
             //This class represents a string composed of two components using the "+" operator
             //in java script with rhino7 upward. ex:var str = "val1" + "val2";
-            out.write('"');
-            out.write((((ConsString) obj).toString()).getBytes());
-            out.write('"');
+            out.write(toJsonString(obj.toString()).getBytes());
         } else if (obj instanceof Integer ||
                 obj instanceof Long ||
                 obj instanceof Float ||

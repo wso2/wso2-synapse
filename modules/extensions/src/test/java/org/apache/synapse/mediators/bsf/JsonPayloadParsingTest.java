@@ -21,6 +21,7 @@ package org.apache.synapse.mediators.bsf;
 import junit.framework.TestCase;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.TestUtils;
 
@@ -201,6 +202,23 @@ public class JsonPayloadParsingTest extends TestCase {
         assertEquals("pen", String.valueOf(
                 ScriptableObject.getProperty((Scriptable) parsed, "item")));
     }
+    /**
+     * A script object whose keys and string values hold quotes, backslashes and control characters
+     * is written as valid JSON and kept as a JSON object.
+     */
+    public void testObjectWithSpecialCharactersCanBeSet() throws Exception {
+        MessageContext mc = TestUtils.getTestContextJson("{\"item\":\"book\"}", null);
+        ScriptMediator mediator = new ScriptMediator("rhinoJs",
+                "var o = {};\n"
+                        + "o['k\\t\"ey'] = 'a\\tb\\nc\"d\\\\e' + String.fromCharCode(1);\n"
+                        + "o.joined = 'x' + String.fromCharCode(9) + 'y';\n"
+                        + "mc.setPayloadJSON(o);", null);
+        assertTrue(mediator.mediate(mc));
+
+        String payload = JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
+        assertEquals("{\"k\\t\\\"ey\":\"a\\tb\\nc\\\"d\\\\e\\u0001\", \"joined\":\"x\\ty\"}", payload);
+    }
+
     /**
      * A JSON string set as a message property is parsed by the script engine of the mediator
      * language, so it does not fail for GraalJS.
