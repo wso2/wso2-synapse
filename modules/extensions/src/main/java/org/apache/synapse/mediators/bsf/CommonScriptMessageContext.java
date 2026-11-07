@@ -64,6 +64,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
@@ -76,6 +77,11 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
     private static final Log logger = LogFactory.getLog(CommonScriptMessageContext.class.getName());
 
     private static final String JSON_OBJECT = "JSON_OBJECT";
+
+    /**
+     * Constant script evaluated once to obtain the JSON object of the script engine.
+     */
+    private static final String JSON_OBJECT_SCRIPT = "JSON";
     private static final String JSON_TEXT = "JSON_TEXT";
 
     /** The actual Synapse message context reference. */
@@ -86,6 +92,11 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
 
     /** To keep Script Engine instance. */
     private ScriptEngine scriptEngine;
+
+    /**
+     * Reference to JSON object which is used to serialize json.
+     */
+    private Object jsonSerializer;
 
     public CommonScriptMessageContext(MessageContext mc, XMLHelper xmlHelper) {
         this.mc = mc;
@@ -185,7 +196,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         } catch (AxisFault axisFault) {
             throw new ScriptException(axisFault);
         }
-        Object jsonObject = scriptEngine.eval('(' + jsonString + ')');
+        Object jsonObject = jsonSerializerCallMember("parse", jsonString);
         setJsonObject(mc, jsonObject);
     }
 
@@ -252,6 +263,27 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
     @Override
     public void setScriptEngine(ScriptEngine scriptEngine) {
         this.scriptEngine = scriptEngine;
+        try {
+            this.jsonSerializer = scriptEngine.eval(JSON_OBJECT_SCRIPT);
+        } catch (ScriptException e) {
+            logger.error("Could not obtain the JSON object of the script engine", e);
+        }
+    }
+
+    /**
+     * Invokes a member of the JSON object of the script engine with the given payload.
+     *
+     * @param key   member of the JSON object to invoke, such as parse
+     * @param value payload passed to the member as an argument
+     * @return result of the invocation
+     * @throws ScriptException if the payload could not be handled
+     */
+    public Object jsonSerializerCallMember(String key, String value) throws ScriptException {
+        try {
+            return ((Invocable) scriptEngine).invokeMethod(jsonSerializer, key, value);
+        } catch (NoSuchMethodException e) {
+            throw new ScriptException(e);
+        }
     }
 
     /**
@@ -972,7 +1004,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
             throw new ScriptException(axisFault);
         }
         //JsonUtil.setContentType(messageContext);
-        Object jsonObject = scriptEngine.eval(JsonUtil.newJavaScriptSourceReader(messageContext));
+        Object jsonObject = jsonSerializerCallMember("parse", new String(json));
         setJsonObject(mc, jsonObject);
     }
 
