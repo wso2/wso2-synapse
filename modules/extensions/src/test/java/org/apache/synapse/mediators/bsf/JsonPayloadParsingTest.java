@@ -71,6 +71,16 @@ public class JsonPayloadParsingTest extends TestCase {
             "book"                              // not JSON at all
     };
 
+    private CommonScriptMessageContext axis2Context() throws Exception {
+        ScriptEngineManager manager = new ScriptEngineManager();
+        manager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+        ScriptEngine engine = manager.getEngineByExtension("jsEngine");
+        MessageContext mc = TestUtils.getAxis2MessageContext("<foo/>", null);
+        CommonScriptMessageContext scriptMC = new CommonScriptMessageContext(mc, new JavaScriptXmlHelper());
+        scriptMC.setScriptEngine(engine);
+        return scriptMC;
+    }
+
     private CommonScriptMessageContext context() throws Exception {
         ScriptEngineManager manager = new ScriptEngineManager();
         manager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
@@ -140,6 +150,36 @@ public class JsonPayloadParsingTest extends TestCase {
                 // expected
             }
         }
+    }
+
+    /**
+     * A script may set an empty payload. It becomes an empty JSON object, which is what the caller
+     * of the API receives, and it is not an error.
+     */
+    public void testEmptyPayloadCanBeSet() throws Exception {
+        CommonScriptMessageContext scriptMC = axis2Context();
+        scriptMC.setPayloadJSON("");
+
+        assertEquals("An empty payload should become an empty JSON object",
+                "{}", scriptMC.getPayloadText());
+
+        Object kept = scriptMC.getPayloadJSON();
+        assertNotNull("An empty payload should still keep a JSON object", kept);
+        assertEquals("An empty JSON object has no members",
+                Scriptable.NOT_FOUND, ScriptableObject.getProperty((Scriptable) kept, "anything"));
+    }
+
+    /**
+     * A payload can still be set after an empty one.
+     */
+    public void testPayloadCanBeSetAfterAnEmptyPayload() throws Exception {
+        CommonScriptMessageContext scriptMC = axis2Context();
+        scriptMC.setPayloadJSON("");
+        scriptMC.setPayloadJSON("{\"item\":\"book\"}");
+
+        assertEquals("{\"item\":\"book\"}", scriptMC.getPayloadText());
+        assertEquals("book", String.valueOf(
+                ScriptableObject.getProperty((Scriptable) scriptMC.getPayloadJSON(), "item")));
     }
 
     /**

@@ -196,7 +196,8 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         } catch (AxisFault axisFault) {
             throw new ScriptException(axisFault);
         }
-        Object jsonObject = jsonSerializerCallMember("parse", jsonString);
+        // Read the stored payload back, so an empty payload keeps the empty object JsonUtil writes.
+        Object jsonObject = jsonSerializerCallMember("parse", JsonUtil.jsonPayloadToString(messageContext));
         setJsonObject(mc, jsonObject);
     }
 
@@ -1004,7 +1005,8 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
             throw new ScriptException(axisFault);
         }
         //JsonUtil.setContentType(messageContext);
-        Object jsonObject = jsonSerializerCallMember("parse", new String(json));
+        // Read the stored payload back, so an empty payload keeps the empty object JsonUtil writes.
+        Object jsonObject = jsonSerializerCallMember("parse", JsonUtil.jsonPayloadToString(messageContext));
         setJsonObject(mc, jsonObject);
     }
 
