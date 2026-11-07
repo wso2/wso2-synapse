@@ -21,6 +21,7 @@ package org.apache.synapse.mediators.bsf;
 import junit.framework.TestCase;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.TestUtils;
 
 import org.mozilla.javascript.Scriptable;
@@ -199,5 +200,17 @@ public class JsonPayloadParsingTest extends TestCase {
         assertNotNull(parsed);
         assertEquals("pen", String.valueOf(
                 ScriptableObject.getProperty((Scriptable) parsed, "item")));
+    }
+    /**
+     * A JSON string set as a message property is parsed by the script engine of the mediator
+     * language, so it does not fail for GraalJS.
+     */
+    public void testJsonStringPropertyIsParsedForGraalJs() throws Exception {
+        MessageContext mc = TestUtils.getAxis2MessageContext("<foo/>", null);
+        ((Axis2MessageContext) mc).getAxis2MessageContext().setProperty("JSON_STRING", "{\"item\":\"book\"}");
+        ScriptMediator mediator = new ScriptMediator("js",
+                "mc.setProperty('item', mc.getPayloadJSON().item);", null);
+        assertTrue(mediator.mediate(mc));
+        assertEquals("book", mc.getProperty("item"));
     }
 }
