@@ -117,4 +117,7 @@ public class AuthConstants {
     public static final String OAUTH_RETRY_MESSAGE_BUILDING_DISABLED = "synapse.endpoint.http.oauth.token.retry.message.building.disabled";
 
     public static final String HTTPS_PROTOCOL = "https";
+
+    // Message property that hands the request clone cached for a token refresh retry to the callback of the send.
+    public static final String OAUTH_CACHED_MESSAGE_CONTEXT = "_OAUTH_CACHED_MESSAGE_CONTEXT";
 }

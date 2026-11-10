@@ -26,6 +26,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 
 /**
  * This class only "holds" the Synapse out message context for the Synapse callback message
@@ -53,9 +54,20 @@ public class AsyncCallback implements AxisCallback {
 
     private SynapseConstants.ENDPOINT_TIMEOUT_TYPE timeoutType;
 
+    /** The request clone an OAuth configured endpoint cached for this send, if any */
+    private MessageContext oauthCachedMessageContext;
+
     public AsyncCallback( org.apache.axis2.context.MessageContext messageContext,MessageContext synapseOutMsgCtx) {
         this.synapseOutMsgCtx = synapseOutMsgCtx;
         this.axis2OutMsgCtx = messageContext;
+        // Take the clone handed over by the OAuth configured endpoint, so it is released together with this callback.
+        if (synapseOutMsgCtx != null) {
+            Object cached = synapseOutMsgCtx.getProperty(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT);
+            if (cached instanceof MessageContext) {
+                this.oauthCachedMessageContext = (MessageContext) cached;
+                synapseOutMsgCtx.getPropertyKeySet().remove(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT);
+            }
+        }
     }
 
     public void onMessage(org.apache.axis2.context.MessageContext messageContext) {}
@@ -134,5 +146,14 @@ public class AsyncCallback implements AxisCallback {
      */
     public void setMarkedForRemoval() {
         this.markedForRemoval = true;
+    }
+
+    /**
+     * Get the request clone an OAuth configured endpoint cached for this send.
+     *
+     * @return the cached clone of this send, or null if nothing was cached
+     */
+    public MessageContext getOauthCachedMessageContext() {
+        return oauthCachedMessageContext;
     }
 }
