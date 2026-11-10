@@ -207,7 +207,9 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
         Object o = synCtx.getProperty(
                 SynapseConstants.PROP_SAL_ENDPOINT_FIRST_MESSAGE_IN_SESSION);
 
-        if (o != null && Boolean.TRUE.equals(o) &&
+        // An authentication failure is not retried, even when the failed child is a failover or load balance
+        // endpoint whose isRetry does not check for it
+        if (o != null && Boolean.TRUE.equals(o) && !isEndpointAuthFailure(synCtx) &&
                 ((AbstractEndpoint) endpoint).isRetry(synCtx)) {
             // this is the first message. so unbind the session with failed endpoint and start
             // new one by resending.

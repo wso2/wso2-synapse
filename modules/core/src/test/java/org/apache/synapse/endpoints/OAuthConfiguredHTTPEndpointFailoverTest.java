@@ -34,8 +34,11 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.algorithms.RoundRobin;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
+import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthHandler;
+import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -476,6 +479,134 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
     }
 
     /**
+     * A token failure in the selected child of a session affinity load balance endpoint fails the first message of
+     * the session once, without binding the session to another child.
+     */
+    @Test
+    public void testTokenFailureInSessionAffinityLoadbalanceChildIsNotRetried() throws Exception {
+
+        AtomicInteger tokenCalls = new AtomicInteger();
+        OAuthConfiguredHTTPEndpoint child1 = createEndpoint("child1", failingTokenHandler(tokenCalls));
+        OAuthConfiguredHTTPEndpoint child2 = createEndpoint("child2", failingTokenHandler(tokenCalls));
+        SALoadbalanceEndpoint loadbalance = createSessionAffinityLoadbalance(child1, child2);
+
+        // The two children share one counter: exactly one of them is selected and neither is retried
+        assertTokenFailureFailsOnce(loadbalance, tokenCalls, 1);
+    }
+
+    /**
+     * A failover endpoint nested in a session affinity load balance endpoint must not be retried by the load balance
+     * endpoint when its OAuth child fails to get a token, and the load balance endpoint's other child must not be
+     * tried.
+     */
+    @Test
+    public void testTokenFailureInFailoverNestedInSessionAffinityLoadbalanceIsNotRetried() throws Exception {
+
+        AtomicInteger tokenCalls = new AtomicInteger();
+        AtomicInteger siblingTokenCalls = new AtomicInteger();
+        FailoverEndpoint inner = createFailover(createEndpoint("child1", failingTokenHandler(tokenCalls)));
+        inner.setName("innerFailoverEP");
+        OAuthConfiguredHTTPEndpoint sibling = createEndpoint("child2", failingTokenHandler(siblingTokenCalls));
+        SALoadbalanceEndpoint outer = createSessionAffinityLoadbalance(inner, sibling);
+
+        assertTokenFailureFailsOnce(outer, tokenCalls, 1);
+        Assert.assertEquals("The outer sibling endpoint must not be tried on a token failure", 0,
+                siblingTokenCalls.get());
+    }
+
+    /**
+     * When the first child of a failover endpoint fails with a transport fault and the next child then fails to get
+     * a token, the request fails once with the second child's 303003 error, not the earlier transport error.
+     */
+    @Test
+    public void testTokenFailureAfterTransportFaultInSiblingFailsOnce() throws Exception {
+
+        OAuthHandler handler1 = Mockito.mock(OAuthHandler.class);
+        AtomicInteger tokenCalls = new AtomicInteger();
+        OAuthConfiguredHTTPEndpoint child1 = createEndpoint("child1", handler1);
+        OAuthConfiguredHTTPEndpoint child2 = createEndpoint("child2", failingTokenHandler(tokenCalls));
+        FailoverEndpoint failover = createFailover(child1, child2);
+        failover.init(synapseEnvironment);
+        MessageContext synCtx = createMessageContext();
+        FaultHandler faultHandler = Mockito.mock(FaultHandler.class);
+        synCtx.pushFaultHandler(faultHandler);
+
+        failover.send(synCtx);
+        Mockito.verify(synapseEnvironment, Mockito.times(1)).send(Mockito.any(), Mockito.eq(synCtx));
+
+        // Simulate a connection failure reported by the transport for the first child
+        synCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.NHTTP_CONNECTION_FAILED);
+        synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, "Connection refused");
+        Object topFaultHandler = synCtx.getFaultStack().pop();
+        Assert.assertSame(child1, topFaultHandler);
+        ((FaultHandler) topFaultHandler).handleFault(synCtx);
+
+        // The failover moved to the second child, whose token request failed once and was not retried
+        Assert.assertEquals("Token must be requested only once", 1, tokenCalls.get());
+        Mockito.verify(handler1, Mockito.times(1)).setAuthHeader(synCtx);
+        Mockito.verify(synapseEnvironment, Mockito.times(1)).send(Mockito.any(), Mockito.eq(synCtx));
+        Mockito.verify(faultHandler, Mockito.times(1)).handleFault(synCtx);
+        Assert.assertTrue(synCtx.getFaultStack().isEmpty());
+        // The token error replaces the earlier transport error, even though a previous endpoint was recorded
+        Assert.assertSame(child2, synCtx.getProperty(SynapseConstants.LAST_ENDPOINT));
+        assertTokenError(synCtx);
+        Assert.assertEquals("Could not generate access token for oauth configured http endpoint child2. "
+                + "token endpoint returned 401", synCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
+    }
+
+    /**
+     * A token failure while retrying with a new token after a backend 401, using the message context cached when the
+     * request was first sent (as the callback receiver does), fails the request once under a failover endpoint.
+     */
+    @Test
+    public void testTokenFailureOnRetryWithCachedCloneUnderFailoverIsNotRetried() throws Exception {
+
+        AtomicInteger tokenCalls = new AtomicInteger();
+        OAuthHandler handler = Mockito.mock(OAuthHandler.class);
+        // First token request succeeds, every later one fails
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+
+                int calls = tokenCalls.incrementAndGet();
+                if (calls > MAX_TOKEN_CALLS) {
+                    throw new IllegalStateException("Token requested " + calls + " times, retry is not bounded");
+                }
+                if (calls > 1) {
+                    throw new AuthException("token endpoint returned 401");
+                }
+                return null;
+            }
+        }).when(handler).setAuthHeader(Mockito.any(MessageContext.class));
+        OAuthHandler siblingHandler = Mockito.mock(OAuthHandler.class);
+        OAuthConfiguredHTTPEndpoint child1 = createEndpoint("child1", handler);
+        OAuthConfiguredHTTPEndpoint child2 = createEndpoint("child2", siblingHandler);
+        FailoverEndpoint failover = createFailover(child1, child2);
+        failover.init(synapseEnvironment);
+        MessageContext synCtx = createMessageContext();
+        FaultHandler faultHandler = Mockito.mock(FaultHandler.class);
+        synCtx.pushFaultHandler(faultHandler);
+
+        failover.send(synCtx);
+        Mockito.verify(synapseEnvironment, Mockito.times(1)).send(Mockito.any(), Mockito.eq(synCtx));
+
+        // The backend returned 401: the callback receiver retries with the clone cached before the first send
+        MessageContext cachedClone = MessageCache.getInstance().removeMessageContext(synCtx.getMessageID());
+        Assert.assertNotNull("The message must be cached for a retry with a new token", cachedClone);
+        Assert.assertNotSame(synCtx, cachedClone);
+
+        child1.retryCallWithNewToken(cachedClone);
+
+        Assert.assertEquals(2, tokenCalls.get());
+        Assert.assertEquals(Boolean.TRUE, cachedClone.getProperty(AuthConstants.RETRIED_ON_OAUTH_FAILURE));
+        Mockito.verify(siblingHandler, Mockito.never()).setAuthHeader(Mockito.any(MessageContext.class));
+        Mockito.verify(synapseEnvironment, Mockito.never()).send(Mockito.any(), Mockito.eq(cachedClone));
+        Mockito.verify(faultHandler, Mockito.times(1)).handleFault(cachedClone);
+        Assert.assertTrue(cachedClone.getFaultStack().isEmpty());
+        assertTokenError(cachedClone);
+    }
+
+    /**
      * Sends through the parent endpoint and asserts the request fails once with the child's 303003 error.
      */
     private void assertTokenFailureFailsOnce(AbstractEndpoint parent, AtomicInteger tokenCalls, int expectedCalls)
@@ -599,6 +730,22 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         loadbalance.setChildren(childList);
         loadbalance.setAlgorithm(new RoundRobin(childList));
         loadbalance.setFailover(true);
+        return loadbalance;
+    }
+
+    /**
+     * Creates a round robin session affinity load balance endpoint with the given children. The dispatcher finds no
+     * existing session, so every message is the first message of a new session.
+     */
+    private SALoadbalanceEndpoint createSessionAffinityLoadbalance(Endpoint... children) {
+
+        SALoadbalanceEndpoint loadbalance = new SALoadbalanceEndpoint();
+        loadbalance.setName("saLoadbalanceEP");
+        List<Endpoint> childList = toChildren(loadbalance, children);
+        loadbalance.setChildren(childList);
+        loadbalance.setAlgorithm(new RoundRobin(childList));
+        loadbalance.setFailover(true);
+        loadbalance.setDispatcher(Mockito.mock(Dispatcher.class));
         return loadbalance;
     }
 
