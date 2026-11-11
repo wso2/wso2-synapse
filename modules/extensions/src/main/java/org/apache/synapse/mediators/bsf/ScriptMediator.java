@@ -608,8 +608,7 @@ public class ScriptMediator extends AbstractMediator {
                         || MJS_JAVA_SCRIPT.equals(language)) {
                     jsonObject = ((GraalVMJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
                 } else {
-                    String scriptWithJsonParser = "JSON.parse(JSON.stringify(" + jsonPayload + "))";
-                    jsonObject = this.jsEngine.eval('(' + scriptWithJsonParser + ')');
+                    jsonObject = ((CommonScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
                 }
             } catch (ScriptException e) {
                 throw new ScriptException("Invalid JSON payload", e.getFileName(), e.getLineNumber(),
@@ -617,11 +616,32 @@ public class ScriptMediator extends AbstractMediator {
             }
         } else if (jsonString != null) {
             String jsonPayload = EIPUtils.tryParseJsonString(jsonParser, jsonString).toString();
-            jsonObject = this.jsEngine.eval('(' + jsonPayload + ')');
+            jsonObject = parseJson(scriptMC, jsonPayload);
         }
         if (jsonObject != null) {
             scriptMC.setJsonObject(synCtx, jsonObject);
         }
+    }
+
+    /**
+     * Parses a JSON payload with the JSON object of the script engine that backs the given script
+     * message context.
+     *
+     * @param scriptMC    script message context of the language of this mediator
+     * @param jsonPayload JSON payload to parse
+     * @return script object built from the payload
+     * @throws ScriptException if the payload is not valid JSON
+     */
+    private Object parseJson(ScriptMessageContext scriptMC, String jsonPayload) throws ScriptException {
+        if (scriptMC instanceof NashornJavaScriptMessageContext) {
+            return ((NashornJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
+        } else if (scriptMC instanceof OpenJDKNashornJavaScriptMessageContext) {
+            return ((OpenJDKNashornJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse",
+                    jsonPayload);
+        } else if (scriptMC instanceof GraalVMJavaScriptMessageContext) {
+            return ((GraalVMJavaScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
+        }
+        return ((CommonScriptMessageContext) scriptMC).jsonSerializerCallMember("parse", jsonPayload);
     }
 
     private void prepareForJSON(ScriptMessageContext scriptMC) {
