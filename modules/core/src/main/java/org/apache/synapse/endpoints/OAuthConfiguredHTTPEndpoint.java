@@ -25,7 +25,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.auth.AuthHandler;
-import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.endpoints.auth.oauth.OAuthHandler;
@@ -64,10 +63,15 @@ public class OAuthConfiguredHTTPEndpoint extends HTTPEndpoint {
             if (!isMessageBuildingDisabled) {
                 // Clone the original MessageContext and save it to do a retry after a token refresh
                 MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synCtx);
-                MessageCache.getInstance().addMessageContext(synCtx.getMessageID(), cloneMessageContext);
+                // Hand the clone to this send's callback, so it is released together with the callback.
+                synCtx.setProperty(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT, cloneMessageContext);
             }
 
-            super.send(synCtx);
+            try {
+                super.send(synCtx);
+            } finally {
+                synCtx.getPropertyKeySet().remove(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT);
+            }
 
         } catch (AuthException e) {
             consumeInputOnException(synCtx);

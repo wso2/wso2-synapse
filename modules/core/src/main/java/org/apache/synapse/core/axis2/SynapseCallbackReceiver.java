@@ -54,7 +54,6 @@ import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.synapse.endpoints.LoadbalanceEndpoint;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
-import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -316,8 +315,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
         // get the original message context that went through the OAuth Configured HTTP endpoint
         // this is used to retry the call when there is any oauth related issue
-        org.apache.synapse.MessageContext originalMC =
-                MessageCache.getInstance().removeMessageContext(synapseOutMsgCtx.getMessageID());
+        org.apache.synapse.MessageContext originalMC = callback.getOauthCachedMessageContext();
 
         Object o = response.getProperty(SynapseConstants.SENDING_FAULT);
         if (o != null && Boolean.TRUE.equals(o)) {

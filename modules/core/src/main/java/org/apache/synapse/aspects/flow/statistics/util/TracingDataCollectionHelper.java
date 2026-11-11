@@ -28,6 +28,7 @@ import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayload;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayloadEvent;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.transport.util.MessageHandlerProvider;
 
 import java.util.HashMap;
@@ -85,6 +86,8 @@ public class TracingDataCollectionHelper {
 		// Remove message-flow-tracer properties
 		propertyMap.remove(SynapseConstants.STATISTICS_STACK);
 		propertyMap.remove(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+		// Remove the OAuth retry clone handed over during a send, which holds the whole request
+		propertyMap.remove(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT);
 
 		return propertyMap;
 	}

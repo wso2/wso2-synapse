@@ -23,6 +23,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.TestMessageContext;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.mediators.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -87,6 +88,24 @@ public class TracingDataCollectionHelperTest {
         Assert.assertNull("value should be removed from the map",
                 tempMap.get(StatisticsConstants.STAT_COLLECTOR_PROPERTY));
         Assert.assertEquals("remaining entry should be in the map", 1, tempMap.size());
+    }
+
+    /**
+     * The OAuth retry clone handed over during a send holds the whole request, so it must not be traced.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testExtractContextPropertiesExcludesOAuthRetryClone() throws Exception {
+        Axis2MessageContext synCtx = TestUtils.getAxis2MessageContext("<test>value</test>",
+                new HashMap<String, Entry>());
+        synCtx.setProperty("testProp", "testValue");
+        synCtx.setProperty(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT,
+                TestUtils.getAxis2MessageContext("<secret>payload</secret>", new HashMap<String, Entry>()));
+        Map<String, Object> tempMap = TracingDataCollectionHelper.extractContextProperties(synCtx);
+        Assert.assertFalse("The OAuth retry clone should not be traced",
+                tempMap.containsKey(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT));
+        Assert.assertEquals("Other properties should still be traced", "testValue", tempMap.get("testProp"));
     }
 
     /**

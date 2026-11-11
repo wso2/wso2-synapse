@@ -31,12 +31,12 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.core.axis2.AsyncCallback;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.algorithms.RoundRobin;
 import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.AuthException;
-import org.apache.synapse.endpoints.auth.oauth.MessageCache;
 import org.apache.synapse.endpoints.auth.oauth.OAuthHandler;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.junit.Assert;
@@ -586,12 +586,22 @@ public class OAuthConfiguredHTTPEndpointFailoverTest {
         MessageContext synCtx = createMessageContext();
         FaultHandler faultHandler = Mockito.mock(FaultHandler.class);
         synCtx.pushFaultHandler(faultHandler);
+        final List<AsyncCallback> callbacks = new ArrayList<>();
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) {
+
+                MessageContext sent = (MessageContext) invocation.getArguments()[1];
+                callbacks.add(new AsyncCallback(((Axis2MessageContext) sent).getAxis2MessageContext(), sent));
+                return null;
+            }
+        }).when(synapseEnvironment).send(Mockito.any(), Mockito.any(MessageContext.class));
 
         failover.send(synCtx);
         Mockito.verify(synapseEnvironment, Mockito.times(1)).send(Mockito.any(), Mockito.eq(synCtx));
 
-        // The backend returned 401: the callback receiver retries with the clone cached before the first send
-        MessageContext cachedClone = MessageCache.getInstance().removeMessageContext(synCtx.getMessageID());
+        // The backend returned 401: the callback receiver retries with the clone the first send handed to its callback
+        MessageContext cachedClone = callbacks.get(0).getOauthCachedMessageContext();
         Assert.assertNotNull("The message must be cached for a retry with a new token", cachedClone);
         Assert.assertNotSame(synCtx, cachedClone);
 

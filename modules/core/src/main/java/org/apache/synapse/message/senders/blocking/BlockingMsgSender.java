@@ -50,7 +50,7 @@ import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.endpoints.TemplateEndpoint;
-import org.apache.synapse.endpoints.auth.oauth.MessageCache;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.util.MediatorPropertyUtils;
 import org.apache.synapse.util.MessageHelper;
@@ -451,8 +451,10 @@ public class BlockingMsgSender {
 
         // get the original message context that went through the OAuth Configured HTTP endpoint
         // this is used to retry the call when there is any oauth related issue
-        org.apache.synapse.MessageContext originalMC =
-                MessageCache.getInstance().removeMessageContext(synapseInMsgCtx.getMessageID());
+        Object cachedMC = synapseInMsgCtx.getProperty(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT);
+        synapseInMsgCtx.getPropertyKeySet().remove(AuthConstants.OAUTH_CACHED_MESSAGE_CONTEXT);
+        org.apache.synapse.MessageContext originalMC = cachedMC instanceof org.apache.synapse.MessageContext
+                ? (org.apache.synapse.MessageContext) cachedMC : null;
 
         // Check fault occure when send the request to endpoint
         if ("true".equals(synapseInMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
