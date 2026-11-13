@@ -40,6 +40,7 @@ import org.apache.http.nio.util.ByteBufferAllocator;
 import org.apache.http.params.HttpParams;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.commons.CorrelationConstants;
+import org.apache.synapse.transport.http.access.Access;
 import org.apache.synapse.transport.http.access.AccessConstants;
 import org.apache.synapse.transport.http.access.AccessHandler;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -74,6 +75,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
     private static final boolean REPLAY_TXN_ENABLED = Boolean.parseBoolean(
             MiscellaneousUtil.getProperty(props, PassThroughConstants.REPLAY_TXN_ENABLED_KEY, "false"));
     private final AtomicReference<HttpRequest> pendingAccessLogRequest = new AtomicReference<>();
+    private final AtomicReference<Access.PendingCombinedAccess> pendingCombinedAccess = new AtomicReference<>();
 
     public LoggingNHttpClientConnection(
             final IOSession session,
@@ -115,6 +117,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Close connection");
         }
+        logPendingCombinedAccess();
         logPendingRequestOnConnectionEnd();
         super.close();
     }
@@ -124,8 +127,21 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Shutdown connection");
         }
+        logPendingCombinedAccess();
         logPendingRequestOnConnectionEnd();
         super.shutdown();
+    }
+
+    /**
+     * Queues the combined access log entry held back in {@link LoggingNHttpMessageParser#parse}. Called once
+     * the response body has been completely read, when the response has no body, or when the connection is
+     * closed.
+     */
+    public void logPendingCombinedAccess() {
+        Access.PendingCombinedAccess pending = pendingCombinedAccess.getAndSet(null);
+        if (pending != null) {
+            pending.addToQueue();
+        }
     }
 
     private void logPendingRequestOnConnectionEnd() {
@@ -478,7 +494,11 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
                     if (response.getStatusLine().getStatusCode() >= HttpStatus.SC_OK) {
                         HttpRequest request = pendingAccessLogRequest.getAndSet(null);
                         if (request != null) {
-                            AccessHandler.getAccess().addCombinedAccessToQueue(request, response);
+                            params.setParameter(AccessConstants.HTTP_RESPONSE_TIME_MS, System.currentTimeMillis());
+                            // Queued once the body is read (decoder completed in the handler's inputReady), or
+                            // in responseReceived when there is no body, so that the response body bytes are
+                            // included
+                            pendingCombinedAccess.set(new Access.PendingCombinedAccess(request, response));
                         }
                     }
                 } else {
