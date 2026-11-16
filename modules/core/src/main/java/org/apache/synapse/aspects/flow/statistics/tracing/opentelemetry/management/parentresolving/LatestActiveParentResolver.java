@@ -64,6 +64,9 @@ public class LatestActiveParentResolver extends AbstractParentResolver {
         }
 
         SpanStore spanStore = manager.getHandler().getSpanStore(synCtx);
+        if (spanStore == null) {
+            return null;
+        }
         return resolveParent(spanStore, synCtx);
     }
 
