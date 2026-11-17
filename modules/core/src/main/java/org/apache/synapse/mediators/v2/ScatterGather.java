@@ -127,6 +127,9 @@ public class ScatterGather extends AbstractMediator implements ManagedLifecycle,
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    super.reportCloseStatistics(synCtx, statisticReportingIndex);
+                }
                 return true;
             }
         }

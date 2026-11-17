@@ -115,6 +115,7 @@ public class ForEachMediatorV2 extends AbstractMediator implements ManagedLifecy
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
+                markCloseStatisticsPending(synCtx);
                 return true;
             }
         }
