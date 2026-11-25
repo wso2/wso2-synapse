@@ -131,6 +131,37 @@ public class PassThroughHttpSenderETagTest extends TestCase {
         assertOriginalResponse(msgContext, captureSourceResponse(), HttpStatus.SC_OK);
     }
 
+    /**
+     * A backend 202 response sets SC_ACCEPTED, which takes precedence over HTTP_SC when the status is determined.
+     * A matching If-None-Match must still produce a 304 response.
+     */
+    @Test
+    public void testBackendAcceptedResponseWithMatchingIfNoneMatchSends304() throws Exception {
+        MessageContext msgContext = createResponseMessageContext(ETAG);
+        msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+        msgContext.setProperty(PassThroughConstants.SC_ACCEPTED, Boolean.TRUE);
+        requestHeaders.put(HttpHeaders.IF_NONE_MATCH, ETAG);
+
+        sender.submitResponse(msgContext);
+
+        assertNotModifiedWithoutBody(msgContext, captureSourceResponse());
+    }
+
+    /**
+     * A backend 202 response with a non matching If-None-Match must be sent as 202.
+     */
+    @Test
+    public void testBackendAcceptedResponseWithNonMatchingIfNoneMatchKeeps202() throws Exception {
+        MessageContext msgContext = createResponseMessageContext(ETAG);
+        msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+        msgContext.setProperty(PassThroughConstants.SC_ACCEPTED, Boolean.TRUE);
+        requestHeaders.put(HttpHeaders.IF_NONE_MATCH, "\"does-not-match\"");
+
+        sender.submitResponse(msgContext);
+
+        assertOriginalResponse(msgContext, captureSourceResponse(), HttpStatus.SC_ACCEPTED);
+    }
+
     private MessageContext createResponseMessageContext(String eTag) throws Exception {
         MessageContext msgContext = new MessageContext();
         msgContext.setEnvelope(OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope());

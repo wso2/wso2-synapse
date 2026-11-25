@@ -686,15 +686,28 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
      * @throws AxisFault if an error occurs while discarding the backend response
      */
     private void prepareNotModifiedResponse(MessageContext msgContext) throws AxisFault {
-        if (!msgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) {
-            RelayUtils.discardMessage(msgContext);
-        }
+        RelayUtils.discardMessage(msgContext);
         msgContext.setProperty(PassThroughConstants.HTTP_SC, HttpStatus.SC_NOT_MODIFIED);
         msgContext.setProperty(PassThroughConstants.HTTP_SC_DESC, "Not Modified");
+        msgContext.setProperty(PassThroughConstants.SC_ACCEPTED, Boolean.FALSE);
+        // Do not restore the original Content-Length from the backend response; a 304 response must not carry it
+        msgContext.setProperty(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING, Boolean.FALSE);
         msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
         msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
 
-        Map headers = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+        removeEntityHeaders((Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS));
+        removeEntityHeaders((Map) msgContext.getProperty(NhttpConstants.EXCESS_TRANSPORT_HEADERS));
+    }
+
+    /**
+     * Removes the entity headers (Content-Type, Content-Length and Transfer-Encoding) from the given header map.
+     *
+     * @param headers HTTP header map, may be null
+     */
+    private void removeEntityHeaders(Map headers) {
+        if (headers == null) {
+            return;
+        }
         Iterator iterator = headers.keySet().iterator();
         while (iterator.hasNext()) {
             Object key = iterator.next();
