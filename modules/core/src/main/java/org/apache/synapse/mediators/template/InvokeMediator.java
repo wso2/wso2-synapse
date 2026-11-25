@@ -19,6 +19,8 @@
 package org.apache.synapse.mediators.template;
 
 import com.google.gson.JsonObject;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.transport.TransportUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.ContinuationState;
@@ -466,6 +468,23 @@ public class InvokeMediator extends AbstractMediator implements
         return overwriteBody;
     }
 
+    /**
+     * Whether the body still holds the kept payload itself, the same element, as it does after a template that does not
+     * touch the body. Putting that element back would detach it and add it again, and the detach drops the data source of
+     * a lazy element that nobody has read, such as a text payload, so it could not be read or written afterwards.
+     */
+    private boolean isKeptBodyInPlace(MessageContext synCtx) {
+
+        Object kept = synCtx.getProperty(SynapseConstants.ORIGINAL_PAYLOAD + "_" +
+                SynapseConstants.BEFORE_INVOKE_TEMPLATE);
+        SOAPEnvelope envelope = synCtx.getEnvelope();
+        if (!(kept instanceof List) || ((List<?>) kept).size() != 1 || envelope == null || envelope.getBody() == null) {
+            return false;
+        }
+        OMElement first = envelope.getBody().getFirstElement();
+        return first != null && ((List<?>) kept).get(0) == first;
+    }
+
     private void postMediate(MessageContext synCtx) {
 
         if (!storeResponseInVariableEnabled(synCtx)) {
@@ -487,10 +506,12 @@ public class InvokeMediator extends AbstractMediator implements
             Object noEntityBody = synCtx.getProperty(ORIGINAL_NO_ENTITY_BODY + "_" +
                     SynapseConstants.BEFORE_INVOKE_TEMPLATE);
             if (!Boolean.TRUE.equals(noEntityBody)) {
-                Source sourceForResponsePayload = MediatorEnrichUtil.createSourceWithProperty(
-                        SynapseConstants.ORIGINAL_PAYLOAD + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE);
-                Target targetForResponsePayload = MediatorEnrichUtil.createTargetWithBody();
-                doEnrich(synCtx, sourceForResponsePayload, targetForResponsePayload);
+                if (!isKeptBodyInPlace(synCtx)) {
+                    Source sourceForResponsePayload = MediatorEnrichUtil.createSourceWithProperty(
+                            SynapseConstants.ORIGINAL_PAYLOAD + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE);
+                    Target targetForResponsePayload = MediatorEnrichUtil.createTargetWithBody();
+                    doEnrich(synCtx, sourceForResponsePayload, targetForResponsePayload);
+                }
             } else {
                 axis2MsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
                 TransportUtils.createSOAPEnvelope(null);
