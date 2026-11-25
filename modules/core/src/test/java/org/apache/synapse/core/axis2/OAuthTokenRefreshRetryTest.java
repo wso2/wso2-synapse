@@ -132,6 +132,43 @@ public class OAuthTokenRefreshRetryTest {
     }
 
     /**
+     * With retry message building disabled there is no clone to resend, so a backend 401 is not retried. The cached
+     * token is removed instead, so that the next request obtains a new token.
+     */
+    @Test
+    public void testBackend401WithMessageBuildingDisabledEvictsTokenWithoutRetry() throws Exception {
+
+        environment.getSynapseConfiguration().getProperties()
+                .setProperty(AuthConstants.OAUTH_RETRY_MESSAGE_BUILDING_DISABLED, "true");
+        MessageContext synCtx = createMessageContext();
+        endpoint.send(synCtx);
+        Assert.assertNull("No clone should be handed over", callbacks.get(0).getOauthCachedMessageContext());
+
+        receiver.receive(createResponse(synCtx, 401));
+
+        Assert.assertEquals("The 401 should not be retried", 1, sentMessages.size());
+        Mockito.verify(oAuthHandler, Mockito.times(1)).removeTokenFromCache(synCtx);
+    }
+
+    /**
+     * With retry message building disabled, any other backend status, for example 503, neither retries nor removes
+     * the cached token.
+     */
+    @Test
+    public void testBackend503WithMessageBuildingDisabledDoesNotEvictToken() throws Exception {
+
+        environment.getSynapseConfiguration().getProperties()
+                .setProperty(AuthConstants.OAUTH_RETRY_MESSAGE_BUILDING_DISABLED, "true");
+        MessageContext synCtx = createMessageContext();
+        endpoint.send(synCtx);
+
+        receiver.receive(createResponse(synCtx, 503));
+
+        Assert.assertEquals("A 503 should not be retried", 1, sentMessages.size());
+        Mockito.verify(oAuthHandler, Mockito.never()).removeTokenFromCache(Mockito.any(MessageContext.class));
+    }
+
+    /**
      * In a blocking call, a backend 401 resends the request with the clone handed over by the endpoint, once.
      */
     @Test
