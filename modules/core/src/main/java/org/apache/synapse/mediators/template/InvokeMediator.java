@@ -20,6 +20,7 @@ package org.apache.synapse.mediators.template;
 
 import com.google.gson.JsonObject;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMSourcedElement;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.transport.TransportUtils;
 import org.apache.commons.lang.StringUtils;
@@ -37,6 +38,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
+import org.apache.synapse.commons.json.Constants;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
@@ -469,11 +471,12 @@ public class InvokeMediator extends AbstractMediator implements
     }
 
     /**
-     * Whether the body still holds the kept payload itself, the same element, as it does after a template that does not
-     * touch the body. Putting that element back would detach it and add it again, and the detach drops the data source of
-     * a lazy element that nobody has read, such as a text payload, so it could not be read or written afterwards.
+     * Whether the body still holds the kept payload itself, the same element, and that element is a sourced element
+     * that nobody has read yet, such as a text payload. Putting it back would detach it and add it again, and the
+     * detach drops the data source of such an element, so it could not be read or written afterwards. Every other body
+     * is put back as before, also the same element of a plain body, whose detach builds it first.
      */
-    private boolean isKeptBodyInPlace(MessageContext synCtx) {
+    private boolean isUnreadKeptBodyInPlace(MessageContext synCtx) {
 
         Object kept = synCtx.getProperty(SynapseConstants.ORIGINAL_PAYLOAD + "_" +
                 SynapseConstants.BEFORE_INVOKE_TEMPLATE);
@@ -482,7 +485,8 @@ public class InvokeMediator extends AbstractMediator implements
             return false;
         }
         OMElement first = envelope.getBody().getFirstElement();
-        return first != null && ((List<?>) kept).get(0) == first;
+        return first instanceof OMSourcedElement && !((OMSourcedElement) first).isExpanded()
+                && ((List<?>) kept).get(0) == first;
     }
 
     private void postMediate(MessageContext synCtx) {
@@ -506,9 +510,11 @@ public class InvokeMediator extends AbstractMediator implements
             Object noEntityBody = synCtx.getProperty(ORIGINAL_NO_ENTITY_BODY + "_" +
                     SynapseConstants.BEFORE_INVOKE_TEMPLATE);
             if (!Boolean.TRUE.equals(noEntityBody)) {
-                if (isKeptBodyInPlace(synCtx)) {
-                    // The put back with an enrich to the body removes this mark, so leaving the body removes it too.
+                if (isUnreadKeptBodyInPlace(synCtx)) {
+                    // The put back with an enrich to the body removes these two properties, so leaving the body removes
+                    // them too. It does all the put back did except the detach and add.
                     axis2MsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
+                    axis2MsgCtx.removeProperty(Constants.ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
                 } else {
                     Source sourceForResponsePayload = MediatorEnrichUtil.createSourceWithProperty(
                             SynapseConstants.ORIGINAL_PAYLOAD + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE);
