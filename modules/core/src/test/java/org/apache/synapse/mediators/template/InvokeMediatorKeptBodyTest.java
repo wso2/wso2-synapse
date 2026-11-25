@@ -60,7 +60,7 @@ public class InvokeMediatorKeptBodyTest extends TestCase {
      * writes it, as a respond after the invoke does.
      */
     public void testAnUnreadTextBodyStaysReadable() throws Exception {
-        MessageContext synCtx = message(false);
+        MessageContext synCtx = message(false, false);
         org.apache.axis2.context.MessageContext axis2 = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         OMElement text = new PlainTextBuilder().processDocument(
                 new ByteArrayInputStream(TEXT.getBytes(StandardCharsets.UTF_8)), "text/plain; charset=UTF-8", axis2);
@@ -80,7 +80,7 @@ public class InvokeMediatorKeptBodyTest extends TestCase {
     }
 
     public void testAnXmlBodyIsTheSameAfterTheInvoke() throws Exception {
-        MessageContext synCtx = message(false);
+        MessageContext synCtx = message(false, false);
         replaceBody(synCtx, AXIOMUtil.stringToOM(XML));
         synCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
 
@@ -90,7 +90,7 @@ public class InvokeMediatorKeptBodyTest extends TestCase {
     }
 
     public void testAJsonPayloadIsTheSameAfterTheInvoke() throws Exception {
-        MessageContext synCtx = message(false);
+        MessageContext synCtx = message(false, false);
         org.apache.axis2.context.MessageContext axis2 = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         JsonUtil.getNewJsonPayload(axis2, JSON, true, true);
         axis2.setProperty(Constants.Configuration.MESSAGE_TYPE, "application/json");
@@ -105,7 +105,7 @@ public class InvokeMediatorKeptBodyTest extends TestCase {
      * A template that replaces the body gets the kept body put back after it, as before.
      */
     public void testTheKeptBodyComesBackAfterATemplateThatReplacesTheBody() throws Exception {
-        MessageContext synCtx = message(true);
+        MessageContext synCtx = message(true, false);
         replaceBody(synCtx, AXIOMUtil.stringToOM(XML));
         synCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
 
@@ -114,9 +114,27 @@ public class InvokeMediatorKeptBodyTest extends TestCase {
         assertEquals(XML, synCtx.getEnvelope().getBody().getFirstElement().toString());
     }
 
+    /**
+     * A template that leaves the body in place and marks the message as one with no body gets the mark removed after
+     * the invoke, as the put back of the kept body removes it.
+     */
+    public void testTheMarkOfNoBodyIsRemovedWhenTheBodyStaysInPlace() throws Exception {
+        MessageContext synCtx = message(false, true);
+        org.apache.axis2.context.MessageContext axis2 = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        OMElement order = AXIOMUtil.stringToOM(XML);
+        replaceBody(synCtx, order);
+        synCtx.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+
+        assertTrue(invoke().mediate(synCtx));
+
+        assertSame(order, synCtx.getEnvelope().getBody().getFirstElement());
+        assertNull(axis2.getProperty(PassThroughConstants.NO_ENTITY_BODY));
+    }
+
     // A message whose configuration holds the template. The template sets the response variable, as a connector
-    // operation does, and with replacing it puts another element in place of the body.
-    private static MessageContext message(boolean replacing) throws Exception {
+    // operation does. With replacing it puts another element in place of the body, and with marking it marks the
+    // message as one with no body.
+    private static MessageContext message(boolean replacing, boolean marking) throws Exception {
         SynapseConfiguration config = new SynapseConfiguration();
         TemplateMediator template = new TemplateMediator();
         template.setName(TEMPLATE);
@@ -126,6 +144,10 @@ public class InvokeMediatorKeptBodyTest extends TestCase {
             @Override
             public boolean mediate(MessageContext synCtx) {
                 synCtx.setVariable(VARIABLE, new DefaultConnectorResponse());
+                if (marking) {
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                            .setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+                }
                 if (replacing) {
                     try {
                         replaceBody(synCtx, AXIOMUtil.stringToOM("<replaced/>"));

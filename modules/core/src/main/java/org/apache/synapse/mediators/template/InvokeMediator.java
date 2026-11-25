@@ -506,7 +506,10 @@ public class InvokeMediator extends AbstractMediator implements
             Object noEntityBody = synCtx.getProperty(ORIGINAL_NO_ENTITY_BODY + "_" +
                     SynapseConstants.BEFORE_INVOKE_TEMPLATE);
             if (!Boolean.TRUE.equals(noEntityBody)) {
-                if (!isKeptBodyInPlace(synCtx)) {
+                if (isKeptBodyInPlace(synCtx)) {
+                    // The put back with an enrich to the body removes this mark, so leaving the body removes it too.
+                    axis2MsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
+                } else {
                     Source sourceForResponsePayload = MediatorEnrichUtil.createSourceWithProperty(
                             SynapseConstants.ORIGINAL_PAYLOAD + "_" + SynapseConstants.BEFORE_INVOKE_TEMPLATE);
                     Target targetForResponsePayload = MediatorEnrichUtil.createTargetWithBody();
