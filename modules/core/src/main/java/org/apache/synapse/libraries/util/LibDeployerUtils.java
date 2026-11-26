@@ -61,6 +61,8 @@ public class LibDeployerUtils {
 
     private static final Log log = LogFactory.getLog(LibDeployerUtils.class);
 
+    private static final String DEPENDENCY_DIR_SUFFIX = "-dependency";
+
     public static Library createSynapseLibrary(String libPath) throws DeploymentException {
 
         return createSynapseLibrary(libPath, null);
@@ -123,7 +125,7 @@ public class LibDeployerUtils {
             // dependencies needed to be added to the class loader before the library is loaded
             LibClassLoader libClassLoader = new LibClassLoader(new URL[]{}, LibDeployerUtils.class.getClassLoader());
             try {
-                libClassLoader.addToClassPath(dependencyPath);
+                libClassLoader.addToClassPath(ownedCopy(dependencyPath));
                 SynapseConfiguration.addLibraryClassLoader(libraryName, libClassLoader);
             } catch (MalformedURLException e) {
                 throw new DeploymentException("Error while adding dependency to the Synapse Library : " +
@@ -134,7 +136,7 @@ public class LibDeployerUtils {
                 LibClassLoader libClassLoader = (LibClassLoader) classLoader;
                 try {
                     if (!isDependencyAlreadyLoaded(libClassLoader, dependencyPath)) {
-                        libClassLoader.addToClassPath(dependencyPath);
+                        libClassLoader.addToClassPath(ownedCopy(dependencyPath));
                     } else {
                         if (log.isDebugEnabled()) {
                             log.debug("Dependency '" + new File(dependencyPath).getName() +
@@ -149,6 +151,50 @@ public class LibDeployerUtils {
             }
         }
 
+    }
+
+    /**
+     * A copy of a dependency jar in a folder of its own under the folder of the extracted libraries. The class loader
+     * of a library is shared by every application that carries it, and the undeploy of an application deletes its
+     * extracted folder, so the loader must not hold a file of that folder. The file name stays, so the check for a
+     * jar that is loaded already works on the copy.
+     *
+     * @param dependencyPath - path to the dependency in the extracted application
+     * @return the path of the copy, or the given path when it is no file
+     */
+    private static String ownedCopy(String dependencyPath) throws DeploymentException {
+        File source = new File(dependencyPath);
+        if (!source.isFile()) {
+            return dependencyPath;
+        }
+        File copy = new File(new File(APP_UNZIP_DIR, System.nanoTime() + DEPENDENCY_DIR_SUFFIX), source.getName());
+        try {
+            FileUtils.copyFile(source, copy);
+        } catch (IOException e) {
+            throw new DeploymentException("Error while copying the dependency " + source.getName(), e);
+        }
+        return copy.getAbsolutePath();
+    }
+
+    /**
+     * Deletes the copies of the dependency jars that a class loader holds, once the last user of its library is
+     * undeployed. A file that the platform keeps open stays, the start of the server empties the temp folder.
+     *
+     * @param classLoader - the class loader of the library that was removed
+     */
+    public static void deleteDependencyCopies(ClassLoader classLoader) {
+        if (!(classLoader instanceof LibClassLoader)) {
+            return;
+        }
+        File root = new File(APP_UNZIP_DIR);
+        for (URL url : ((LibClassLoader) classLoader).getURLs()) {
+            File file = FileUtils.toFile(url);
+            File dir = file == null ? null : file.getParentFile();
+            if (dir != null && root.equals(dir.getParentFile()) && dir.getName().endsWith(DEPENDENCY_DIR_SUFFIX)
+                    && !FileUtils.deleteQuietly(dir) && log.isDebugEnabled()) {
+                log.debug("The copy of the dependency " + file.getName() + " could not be deleted now");
+            }
+        }
     }
 
     private static void populateLocalEnties(SynapseLibrary synapseLibrary,String localEntriesFilePath) {

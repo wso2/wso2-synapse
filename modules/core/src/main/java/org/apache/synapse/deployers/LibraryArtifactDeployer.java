@@ -61,7 +61,15 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 
 		Library lib = LibDeployerUtils.createSynapseLibrary(libFilePath, deploymentFileData);
 	    String libArtifactName = lib.getQName().toString();
-		if (this.getSynapseConfiguration().getSynapseLibraries().get(lib.getQName().toString()) != null) {
+		Library inUse = this.getSynapseConfiguration().getSynapseLibraries().get(libArtifactName);
+		if (inUse != null && !deploymentStore.containsFileName(libFilePath)
+				&& !deploymentStore.isUpdatingArtifact(libFilePath)) {
+			// Another application carries a library of this name. It is one more user of the deployed library,
+			// which stays until its last user is undeployed.
+			SynapseConfiguration.addNewDeployedLib(libArtifactName, inUse);
+			deploymentStore.addArtifact(libFilePath, libArtifactName);
+			logOneMoreUser(libArtifactName, inUse, libFilePath);
+		} else if (inUse != null) {
 			log.warn("Hot deployment thread picked up an already deployed synapse library - Ignoring");
 		} else {
 			if (log.isDebugEnabled()) {
@@ -188,6 +196,15 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 	    } else {
 		// if the file doesn't exists then it is an actual undeployment
 		String artifactName = deploymentStore.getArtifactNameForFile(fileName);
+		int users = SynapseConfiguration.getDeployedLibCount(artifactName);
+		if (users > 1) {
+		    // Another application still uses the library: only this user goes, the library stays.
+		    SynapseConfiguration.removeOneDeployedLib(artifactName);
+		    deploymentStore.removeArtifactWithFileName(fileName);
+		    log.info("Synapse Library named '" + artifactName + "' is kept for " + (users - 1)
+			    + " more user(s) after the undeploy of one user");
+		    return;
+		}
 		try {
 
 		    // CarbonApplication instance to delete
@@ -207,9 +224,14 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 			    getSynapseConfiguration().removeEntry(localEntry);
 			}
 		    }
+		    ClassLoader loader = SynapseConfiguration.getClassLoader(artifactName);
 		    // do un-deployment
 		    undeploySynapseArtifact(artifactName);
-		    
+		    if (loader != null && SynapseConfiguration.getClassLoader(artifactName) == null) {
+			// The last user is gone, so the copies of the dependency jars of the library go too.
+			LibDeployerUtils.deleteDependencyCopies(loader);
+		    }
+
 		    deploymentStore.removeArtifactWithFileName(fileName);
 
 		    log.info("Synapse Library named '" + artifactName + "' has been undeployed");
@@ -243,6 +265,21 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 		} catch (DeploymentException e) {
 			handleDeploymentError(e.getMessage(), e);
 		}
+    }
+
+    // Only the base names of the two library files are logged: the full path names the extracted application.
+    private static void logOneMoreUser(String libArtifactName, Library inUse, String libFilePath) {
+	int users = SynapseConfiguration.getDeployedLibCount(libArtifactName);
+	String added = new File(libFilePath).getName();
+	String used = inUse.getFileName() == null ? added : new File(inUse.getFileName()).getName();
+	if (added.equals(used)) {
+	    log.info("Synapse Library named '" + libArtifactName + "' from file " + added
+		    + " is deployed already. This application is counted as one more user (" + users + " users).");
+	} else {
+	    log.warn("Synapse Library named '" + libArtifactName + "' from file " + added
+		    + " is deployed already from file " + used + ". This application runs on the library in use,"
+		    + " which stays until its last user is undeployed (" + users + " users).");
+	}
     }
 
     private void handleDeploymentError(String msg, Exception e) {
