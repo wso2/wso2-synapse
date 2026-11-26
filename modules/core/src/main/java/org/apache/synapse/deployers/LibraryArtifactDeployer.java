@@ -240,6 +240,14 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 			    + fileName, sade);
 		}
 	    }
+	} else if (deploymentStore.isUpdatingArtifact(fileName) && SynapseConfiguration.getDeployedLibCount(
+		deploymentStore.getUpdatingArtifactWithFileName(fileName)) > 1) {
+	    // A user that was updated in place and then removed, while another application still uses the library.
+	    String artifactName = deploymentStore.getUpdatingArtifactWithFileName(fileName);
+	    deploymentStore.removeUpdatingArtifact(fileName);
+	    SynapseConfiguration.removeOneDeployedLib(artifactName);
+	    log.info("Synapse Library named '" + artifactName + "' is kept for "
+		    + SynapseConfiguration.getDeployedLibCount(artifactName) + " more user(s) after the undeploy of one user");
 	} else {
 	    String msg = "Artifact representing the filename " + fileName
 		    + " is not deployed on Synapse";
