@@ -53,6 +53,8 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.synapse.endpoints.LoadbalanceEndpoint;
 import org.apache.synapse.endpoints.OAuthConfiguredHTTPEndpoint;
+import org.apache.synapse.endpoints.auth.AuthConstants;
+import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.endpoints.auth.oauth.OAuthUtils;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -666,6 +668,19 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         synapseOutMsgCtx)) {
                     httpEndpoint.retryCallWithNewToken(originalMC);
                     return;
+                }
+
+                boolean isMessageBuildingDisabled = Boolean.parseBoolean(synapseInMessageContext.getEnvironment().
+                        getSynapseConfiguration().getProperty(AuthConstants.OAUTH_RETRY_MESSAGE_BUILDING_DISABLED));
+                if (isMessageBuildingDisabled && OAuthUtils.retryOnOAuthFailure(httpEndpoint, synapseInMessageContext,
+                        synapseOutMsgCtx)) {
+                    try {
+                        httpEndpoint.getOauthHandler().removeTokenFromCache(synapseOutMsgCtx);
+                    } catch (AuthException e) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Error removing access token from cache", e);
+                        }
+                    }
                 }
             }
 
