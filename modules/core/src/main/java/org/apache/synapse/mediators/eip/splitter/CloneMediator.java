@@ -142,8 +142,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                     TelemetryUtil.incrementBranchCount(synCtx);
                 }
                 target.mediate(clonedMsgCtx);
-                boolean isFailure = "true".equalsIgnoreCase((String)clonedMsgCtx.
-                        getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION));
+                boolean isFailure = "true".equalsIgnoreCase(String.valueOf(clonedMsgCtx.
+                        getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION)));
                 if (isFailure && sequential && isStopFlowOnFailure) {
                     break;
                 }
@@ -185,8 +185,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 TelemetryUtil.incrementBranchCount(synCtx);
             }
             target.mediate(clonedMsgCtx);
-            boolean isFailure = "true".equalsIgnoreCase((String)clonedMsgCtx.
-                    getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION));
+            boolean isFailure = "true".equalsIgnoreCase(String.valueOf(clonedMsgCtx.
+                    getProperty(EIPConstants.ERROR_ON_TARGET_EXECUTION)));
             if (isFailure && sequential && isStopFlowOnFailure) {
                 break;
             }
