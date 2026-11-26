@@ -153,6 +153,27 @@ public class CloneMediatorTest extends AbstractSplitMediatorTestCase {
         assertEquals("the iterations after the failing one do not run", 1, failing.calls);
     }
 
+    public void testSequentialCloneStopsAtAFailingTargetWhenAskedWithABoolean() throws Exception {
+        FailingMediator failing = failingSequence();
+        testCtx.setProperty("STOP_TARGET_EXECUTION_ON_FAILURE", Boolean.TRUE);
+        Mediator clone = fac.createMediator(createOMElement("<clone sequential=\"true\" " +
+            "xmlns=\"http://ws.apache.org/ns/synapse\"><target sequence=\"failingSeq\"/>" +
+            "<target sequence=\"seqRef\"/></clone>"), new Properties());
+        clone.mediate(testCtx);
+        assertEquals(1, failing.calls);
+        assertNull("the target after the failing one does not run", helperMediator.getMediatedContext(0));
+    }
+
+    public void testSequentialIterationsStopAtAFailingTargetWhenAskedWithABoolean() throws Exception {
+        FailingMediator failing = failingSequence();
+        testCtx.setProperty("STOP_TARGET_EXECUTION_ON_FAILURE", Boolean.TRUE);
+        Mediator clone = fac.createMediator(createOMElement("<clone sequential=\"true\" iterations=\"3\" " +
+            "xmlns=\"http://ws.apache.org/ns/synapse\"><target sequence=\"failingSeq\"/></clone>"),
+            new Properties());
+        clone.mediate(testCtx);
+        assertEquals("the iterations after the failing one do not run", 1, failing.calls);
+    }
+
     private FailingMediator failingSequence() {
         FailingMediator failing = new FailingMediator();
         SequenceMediator sequence = new SequenceMediator();
