@@ -24,11 +24,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 
 import static org.junit.Assert.*;
 
@@ -266,9 +272,77 @@ public class LibDeployerUtilsTest {
                 ((LibClassLoader) SynapseConfiguration.getClassLoader(libB)).getURLs().length);
     }
 
+    /**
+     * The undeploy of the application that brought a dependency deletes its extracted folder. The class loader of the
+     * library is shared with the other applications that carry it, so it must still load from the jar.
+     */
+    @Test
+    public void aDependencyStillLoadsAfterTheFolderOfItsApplicationIsDeleted() throws Exception {
+        String libName = "{org.wso2.carbon.connector}copied";
+        File jar = createJar(car1Dir, "provider-1.0.0.jar", "META-INF/test-providers.xml", "<providers/>");
+
+        LibDeployerUtils.addDependencyToSynapseLibrary(libName, jar.getAbsolutePath());
+        deleteQuietly(car1Dir.toFile());
+
+        LibClassLoader loader = (LibClassLoader) SynapseConfiguration.getClassLoader(libName);
+        URL resource = loader.getResource("META-INF/test-providers.xml");
+        assertNotNull("the resource of the dependency is found after its application folder is deleted", resource);
+        try (InputStream in = resource.openStream()) {
+            assertEquals("<providers/>", new String(readAll(in), StandardCharsets.UTF_8));
+        }
+        assertEquals("the copy keeps the file name of the dependency", 1,
+                countUrlsWithFilename(loader.getURLs(), "provider-1.0.0.jar"));
+
+        File copy = new File(loader.getURLs()[0].toURI());
+        LibDeployerUtils.deleteDependencyCopies(loader);
+        assertFalse("the copy goes when the last user of the library is undeployed", copy.exists());
+        assertFalse(copy.getParentFile().exists());
+    }
+
+    /**
+     * A second application with a dependency of the same file name adds no second copy.
+     */
+    @Test
+    public void aDependencyOfTheSameNameIsCopiedOnce() throws Exception {
+        String libName = "{org.wso2.carbon.connector}copiedonce";
+        File first = createJar(car1Dir, "provider-1.0.0.jar", "META-INF/test-providers.xml", "<first/>");
+        File second = createJar(car2Dir, "provider-1.0.0.jar", "META-INF/test-providers.xml", "<second/>");
+
+        LibDeployerUtils.addDependencyToSynapseLibrary(libName, first.getAbsolutePath());
+        LibDeployerUtils.addDependencyToSynapseLibrary(libName, second.getAbsolutePath());
+        deleteQuietly(car1Dir.toFile());
+
+        LibClassLoader loader = (LibClassLoader) SynapseConfiguration.getClassLoader(libName);
+        assertEquals(1, loader.getURLs().length);
+        try (InputStream in = loader.getResource("META-INF/test-providers.xml").openStream()) {
+            assertEquals("the jar of the first application is the one in use", "<first/>",
+                    new String(readAll(in), StandardCharsets.UTF_8));
+        }
+        LibDeployerUtils.deleteDependencyCopies(loader);
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private static File createJar(Path directory, String filename, String entry, String text) throws IOException {
+        File file = directory.resolve(filename).toFile();
+        try (JarOutputStream out = new JarOutputStream(new FileOutputStream(file))) {
+            out.putNextEntry(new ZipEntry(entry));
+            out.write(text.getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+        }
+        return file;
+    }
+
+    private static byte[] readAll(InputStream in) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[256];
+        for (int n; (n = in.read(buffer)) > 0; ) {
+            out.write(buffer, 0, n);
+        }
+        return out.toByteArray();
+    }
 
     private static File createTempFile(Path directory, String filename) throws IOException {
         File file = directory.resolve(filename).toFile();
