@@ -73,6 +73,7 @@ import org.wso2.caching.digest.DigestGenerator;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -530,6 +531,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             return;
         }
 
+        // Handle Http ETag revalidation. This must be decided before the response body is written to the pipe,
+        // since a 304 response has no entity and the pipe would never be consumed.
+        if (isNotModified(msgContext, sourceRequest)) {
+            prepareNotModifiedResponse(msgContext);
+        }
+
         SourceResponse sourceResponse = SourceResponseFactory.create(msgContext,
                 sourceRequest, sourceConfiguration);
         sourceResponse.checkResponseChunkDisable(msgContext);
@@ -639,6 +646,76 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             pipe.consumerError();
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+        }
+    }
+
+    /**
+     * Checks whether the If-None-Match header of the request matches the ETag of a successful response.
+     *
+     * @param msgContext    The outgoing response message context
+     * @param sourceRequest The request received from the client
+     * @return true if the response should be sent as 304 Not Modified
+     */
+    private boolean isNotModified(MessageContext msgContext, SourceRequest sourceRequest) {
+        String ifNoneMatchHeader = sourceRequest.getHeaders().get(HttpHeaders.IF_NONE_MATCH);
+        Map headers = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (ifNoneMatchHeader == null || headers == null) {
+            return false;
+        }
+        Object eTagHeader = headers.get(HttpHeaders.ETAG);
+        if (!(eTagHeader instanceof String)) {
+            return false;
+        }
+        int status = PassThroughTransportUtils.determineHttpStatusCode(msgContext);
+        if (status < HttpStatus.SC_OK || status >= HttpStatus.SC_MULTIPLE_CHOICES) {
+            return false;
+        }
+        for (String hashValue : ifNoneMatchHeader.split(",")) {
+            if (hashValue.trim().equals(eTagHeader)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Converts the response to a 304 Not Modified response without an entity body. If the backend response is
+     * still in the pipe it is drained, so that the target connection is not left waiting for a consumer.
+     *
+     * @param msgContext The outgoing response message context
+     * @throws AxisFault if an error occurs while discarding the backend response
+     */
+    private void prepareNotModifiedResponse(MessageContext msgContext) throws AxisFault {
+        RelayUtils.discardMessage(msgContext);
+        msgContext.setProperty(PassThroughConstants.HTTP_SC, HttpStatus.SC_NOT_MODIFIED);
+        msgContext.setProperty(PassThroughConstants.HTTP_SC_DESC, "Not Modified");
+        msgContext.setProperty(PassThroughConstants.SC_ACCEPTED, Boolean.FALSE);
+        // Do not restore the original Content-Length from the backend response; a 304 response must not carry it
+        msgContext.setProperty(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING, Boolean.FALSE);
+        msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+        msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+
+        removeEntityHeaders((Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS));
+        removeEntityHeaders((Map) msgContext.getProperty(NhttpConstants.EXCESS_TRANSPORT_HEADERS));
+    }
+
+    /**
+     * Removes the entity headers (Content-Type, Content-Length and Transfer-Encoding) from the given header map.
+     *
+     * @param headers HTTP header map, may be null
+     */
+    private void removeEntityHeaders(Map headers) {
+        if (headers == null) {
+            return;
+        }
+        Iterator iterator = headers.keySet().iterator();
+        while (iterator.hasNext()) {
+            Object key = iterator.next();
+            if (key instanceof String && (HTTP.CONTENT_TYPE.equalsIgnoreCase((String) key)
+                    || HTTP.CONTENT_LEN.equalsIgnoreCase((String) key)
+                    || HTTP.TRANSFER_ENCODING.equalsIgnoreCase((String) key))) {
+                iterator.remove();
+            }
         }
     }
 

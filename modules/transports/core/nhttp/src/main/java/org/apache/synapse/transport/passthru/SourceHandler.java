@@ -23,7 +23,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -558,20 +557,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 if (SourceContext.get(conn).isShutDown()) {
                     response.setKeepAlive(false);
                 }
-                // Handle Http ETag
-                String ifNoneMatchHeader =
-                        SourceContext.getRequest(conn).getHeaders().get(HttpHeaders.IF_NONE_MATCH);
-                if (ifNoneMatchHeader != null) {
-                    String eTagHeader = response.getHeader(HttpHeaders.ETAG);
-                    if (eTagHeader != null) {
-                        for (String hashValue : ifNoneMatchHeader.split(",")) {
-                            if (hashValue.trim().equals(eTagHeader)) {
-                                response.setStatus(HttpStatus.SC_NOT_MODIFIED);
-                                break;
-                            }
-                        }
-                    }
-                }
+                // Http ETag revalidation (304 Not Modified) is handled in PassThroughHttpSender#submitResponse
 
                 if (isMessageSizeValidationEnabled) {
                     if (conn.getContext().getAttribute(PassThroughConstants.MESSAGE_SIZE_LIMIT_EXCEEDED) != null) {
